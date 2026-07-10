@@ -2,10 +2,10 @@
 
 Here's the full workflow for a teammate joining fresh:
 1. Clone the repo (not pull — that's for updating a repo you already have; for a brand-new setup you clone):
-bashgit clone https://github.com/FT-RAITA/cse470project.git
-cd cse470project
+bash:  git clone https://github.com/FT-RAITA/cse470project.git
+  cd cse470project
 2. Install dependencies — separately for each folder, since you have a frontend and backend each with their own package.json:
-bashcd frontend
+bash:    cd frontend
 npm install
 cd ../backend
 npm install
