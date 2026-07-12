@@ -1,29 +1,33 @@
 import express from "express";
 import cors from "cors";
-import authRoutes from "./routes/authRoutes.js";
-import { connectDB } from "./config/db.js";
 import dotenv from "dotenv";
-
-
+import authRoutes from "./routes/authRoutes.js";
+import elderRoutes from "./routes/elderRoutes.js";
+import { connectDB } from "./config/db.js";
+ 
+dotenv.config();
+ 
 const app = express();
 const PORT = 5001;
-
+ 
 connectDB();
-dotenv.config();
+ 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
+ 
 // Routes
 app.use("/api/auth", authRoutes);
-
+app.use("/api", elderRoutes);
+ 
 app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
-
+ 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+ 
 
 
 // kKXXDAZnVHCm9HE5

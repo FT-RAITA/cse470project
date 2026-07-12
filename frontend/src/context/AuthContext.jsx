@@ -4,6 +4,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // On first load, restore any saved session
@@ -13,24 +14,28 @@ export function AuthProvider({ children }) {
 
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
+      setToken(storedToken);
     }
     setLoading(false);
   }, []);
 
-  const login = (userData, token) => {
+  const login = (userData, newToken) => {
     localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", token);
+    localStorage.setItem("token", newToken);
     setUser(userData);
+    setToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);
+    setToken(null);
   };
 
   const value = {
     user,
+    token,
     isAuthenticated: !!user,
     loading,
     login,

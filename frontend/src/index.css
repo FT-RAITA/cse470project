@@ -1,1 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-paper: #F3F1E6;
+  --color-paper-card: #FFFDF7;
+  --color-ink: #1E2A26;
+  --color-ink-soft: #5C6B65;
+  --color-primary: #24463F;
+  --color-primary-light: #3E6B5F;
+  --color-primary-dark: #16302A;
+  --color-accent: #C99A3C;
+  --color-accent-soft: #E9D5A6;
+  --color-rose: #B5544A;
+  --color-rose-soft: #F1DAD6;
+  --color-border: #E4DFCF;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+html {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+}
+
+body {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(30,42,38,0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary-light) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
