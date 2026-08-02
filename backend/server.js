@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import elderRoutes from "./routes/elderRoutes.js";
+import moodCheckinRoutes from "./routes/moodCheckinRoutes.js";
 import { connectDB } from "./config/db.js";
  
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", elderRoutes);
+app.use("/api", moodCheckinRoutes);
  
 app.get("/", (req, res) => {
   res.send("Hello, World!");

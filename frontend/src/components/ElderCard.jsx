@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplet, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Droplet, ChevronRight, Pencil, Trash2, Smile} from "lucide-react";
 
 // Deterministic warm tint per elder so the "chart tab" reads distinctly per person
 const tints = ["#C99A3C", "#3E6B5F", "#B5544A", "#7A6A9E", "#4C7A9E"];
@@ -8,7 +8,7 @@ function tintFor(id) {
   return tints[sum % tints.length];
 }
 
-export default function ElderCard({ elder, onEdit, onDelete }) {
+export default function ElderCard({ elder, onEdit, onDelete, onMoodCheckin }) {
   const navigate = useNavigate();
   const tint = tintFor(elder._id);
   const initials = elder.fullName
@@ -46,12 +46,25 @@ export default function ElderCard({ elder, onEdit, onDelete }) {
             </div>
           </div>
 
-          {elder.bloodGroup && (
-            <span className="flex items-center gap-1 rounded-md border border-border bg-paper px-2 py-1 font-mono text-xs font-medium text-primary-dark">
-              <Droplet size={11} strokeWidth={2.5} />
-              {elder.bloodGroup}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {elder.bloodGroup && (
+              <span className="flex items-center gap-1 rounded-md border border-border bg-paper px-2 py-1 font-mono text-xs font-medium text-primary-dark">
+                <Droplet size={11} strokeWidth={2.5} />
+                {elder.bloodGroup}
+              </span>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoodCheckin(elder);
+              }}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-paper text-primary transition-colors hover:bg-primary hover:text-paper-card"
+              aria-label={`Log mood check-in for ${elder.fullName}`}
+              title="Mood check-in"
+            >
+              <Smile size={15} strokeWidth={2} />
+            </button>
+          </div>
         </div>
 
         {elder.chronicDiseases?.length > 0 && (

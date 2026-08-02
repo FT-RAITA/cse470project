@@ -7,6 +7,7 @@ import ElderCard from "../components/ElderCard";
 import Button from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 import { getAllElders, deleteElder as deleteElderApi } from "../services/elderService";
+import MoodCheckinModal from "../components/MoodCheckinModal";
 
 export default function CargiverDashboard() {
   const { token } = useAuth();
@@ -16,6 +17,7 @@ export default function CargiverDashboard() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null); // { id, name }
+  const [checkinElder, setCheckinElder] = useState(null);
 
   useEffect(() => {
     fetchElders();
@@ -130,6 +132,7 @@ export default function CargiverDashboard() {
                 elder={elder}
                 onEdit={(id) => navigate(`/elders/${id}/edit`)}
                 onDelete={(id, name) => setPendingDelete({ id, name })}
+                onMoodCheckin={(elder) => setCheckinElder(elder)}
               />
             ))}
           </div>
@@ -156,6 +159,12 @@ export default function CargiverDashboard() {
             </div>
           </div>
         </div>
+      )}
+      {checkinElder && (
+        <MoodCheckinModal
+          elder={checkinElder}
+          onClose={() => setCheckinElder(null)}
+        />
       )}
     </div>
   );
