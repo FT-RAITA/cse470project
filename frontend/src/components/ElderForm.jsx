@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X, User, Stethoscope, Users as UsersIcon } from "lucide-react";
+import { Plus, X, User, Stethoscope, Users as UsersIcon, Apple } from "lucide-react";
 import InputField from "./InputField";
 import Button from "./Button";
 
@@ -26,6 +26,12 @@ const initialState = (elder) => ({
   emergencyContacts: elder?.emergencyContacts?.length
     ? elder.emergencyContacts
     : [{ ...emptyContact }],
+  dietType: elder?.nutritionPlan?.dietType || "",
+  calorieGoal: elder?.nutritionPlan?.calorieGoal ?? "",
+  waterGoal: elder?.nutritionPlan?.waterGoal ?? "",
+  proteinGoal: elder?.nutritionPlan?.proteinGoal ?? "",
+  restrictions: elder?.nutritionPlan?.restrictions?.join(", ") || "",
+  supplements: elder?.nutritionPlan?.supplements?.join(", ") || "",
 });
 
 export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
@@ -55,9 +61,22 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
     e.preventDefault();
     setSaving(true);
     try {
+      const hasNutritionPlan =
+        form.dietType ||
+        form.calorieGoal ||
+        form.waterGoal ||
+        form.proteinGoal ||
+        form.restrictions.trim() ||
+        form.supplements.trim();
+
       const payload = {
-        ...form,
+        fullName: form.fullName,
         age: form.age ? Number(form.age) : undefined,
+        dateOfBirth: form.dateOfBirth,
+        gender: form.gender,
+        bloodGroup: form.bloodGroup,
+        phone: form.phone,
+        address: form.address,
         allergies: form.allergies
           .split(",")
           .map((a) => a.trim())
@@ -70,6 +89,22 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
         emergencyContacts: form.emergencyContacts.filter(
           (c) => c.name.trim() && c.phone.trim()
         ),
+        nutritionPlan: hasNutritionPlan
+          ? {
+              dietType: form.dietType || undefined,
+              calorieGoal: form.calorieGoal ? Number(form.calorieGoal) : undefined,
+              waterGoal: form.waterGoal ? Number(form.waterGoal) : undefined,
+              proteinGoal: form.proteinGoal ? Number(form.proteinGoal) : undefined,
+              restrictions: form.restrictions
+                .split(",")
+                .map((r) => r.trim())
+                .filter(Boolean),
+              supplements: form.supplements
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            }
+          : undefined,
       };
       await onSubmit(payload);
     } finally {
@@ -138,7 +173,7 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
           />
           <div className="sm:col-span-2">
             <InputField
-            size="md"
+              size="md"
               label="Address"
               name="address"
               as="textarea"
@@ -183,7 +218,7 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
                 className="grid grid-cols-1 gap-3 rounded-lg bg-paper p-4 sm:grid-cols-[1.5fr_1fr_1.5fr_auto]"
               >
                 <InputField
-            size="md"
+                  size="md"
                   name={`condition-${i}`}
                   placeholder="Condition"
                   value={entry.condition}
@@ -192,7 +227,7 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
                   }
                 />
                 <InputField
-            size="md"
+                  size="md"
                   name={`diagnosisDate-${i}`}
                   type="date"
                   value={entry.diagnosisDate}
@@ -201,7 +236,7 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
                   }
                 />
                 <InputField
-            size="md"
+                  size="md"
                   name={`notes-${i}`}
                   placeholder="Notes"
                   value={entry.notes}
@@ -231,6 +266,69 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
         </div>
       </Section>
 
+      {/* Nutrition plan */}
+      <Section icon={Apple} title="Nutrition Plan">
+        <p className="mb-4 text-xs text-ink-soft">
+          Optional — leave blank if there's no specific plan yet.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <InputField
+            size="md"
+            label="Diet Type"
+            name="dietType"
+            value={form.dietType}
+            onChange={(e) => update("dietType", e.target.value)}
+            placeholder="e.g. Low-sodium, Diabetic-friendly"
+          />
+          <InputField
+            size="md"
+            label="Calorie Goal"
+            name="calorieGoal"
+            type="number"
+            mono
+            value={form.calorieGoal}
+            onChange={(e) => update("calorieGoal", e.target.value)}
+            placeholder="e.g. 1800 kcal/day"
+          />
+          <InputField
+            size="md"
+            label="Water Goal (ml)"
+            name="waterGoal"
+            type="number"
+            mono
+            value={form.waterGoal}
+            onChange={(e) => update("waterGoal", e.target.value)}
+            placeholder="e.g. 2000"
+          />
+          <InputField
+            size="md"
+            label="Protein Goal (g)"
+            name="proteinGoal"
+            type="number"
+            mono
+            value={form.proteinGoal}
+            onChange={(e) => update("proteinGoal", e.target.value)}
+            placeholder="e.g. 60"
+          />
+          <InputField
+            size="md"
+            label="Restrictions"
+            name="restrictions"
+            value={form.restrictions}
+            onChange={(e) => update("restrictions", e.target.value)}
+            placeholder="Separate with commas — e.g. No sugar, Low salt"
+          />
+          <InputField
+            size="md"
+            label="Supplements"
+            name="supplements"
+            value={form.supplements}
+            onChange={(e) => update("supplements", e.target.value)}
+            placeholder="e.g. Vitamin D, Calcium"
+          />
+        </div>
+      </Section>
+
       {/* Emergency contacts */}
       <Section icon={UsersIcon} title="Emergency Contacts">
         <div className="space-y-3">
@@ -240,7 +338,7 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
               className="grid grid-cols-1 gap-3 rounded-lg bg-paper p-4 sm:grid-cols-[1.2fr_1fr_1.2fr_auto]"
             >
               <InputField
-            size="md"
+                size="md"
                 name={`contactName-${i}`}
                 placeholder="Name"
                 value={contact.name}
@@ -249,7 +347,7 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
                 }
               />
               <InputField
-            size="md"
+                size="md"
                 name={`contactRelation-${i}`}
                 placeholder="Relation"
                 value={contact.relation}
@@ -258,7 +356,7 @@ export default function ElderForm({ elder, onSubmit, submitLabel = "Save" }) {
                 }
               />
               <InputField
-            size="md"
+                size="md"
                 name={`contactPhone-${i}`}
                 mono
                 placeholder="Phone"

@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake, Smile } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Button from "../components/Button";
 import MedicalHistoryCard from "../components/MedicalHistoryCard";
 import EmergencyContactCard from "../components/EmergencyContactCard";
+import NutritionPlanCard from "../components/NutritionPlanCard";
+import MealScheduleSection from "../components/MealScheduleSection";
+import MoodCheckinModal from "../components/MoodCheckinModal";
 import { useAuth } from "../context/AuthContext";
 import { getElderById, deleteElder as deleteElderApi } from "../services/elderService";
 
@@ -26,6 +29,7 @@ export default function ElderProfile() {
   const [elder, setElder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [showMoodModal, setShowMoodModal] = useState(false);
 
   useEffect(() => {
     fetchElder();
@@ -105,6 +109,15 @@ export default function ElderProfile() {
 
             <div className="flex gap-2.5">
               <Button
+                variant="accent"
+                icon={Smile}
+                size="md"
+                fullWidth={false}
+                onClick={() => setShowMoodModal(true)}
+              >
+                Mood Check-in
+              </Button>
+              <Button
                 variant="ghost"
                 icon={Pencil}
                 size="md"
@@ -142,7 +155,20 @@ export default function ElderProfile() {
           />
           <EmergencyContactCard emergencyContacts={elder.emergencyContacts} />
         </div>
+
+        <div className="mt-6">
+          <NutritionPlanCard nutritionPlan={elder.nutritionPlan} />
+        </div>
+
+        {/* Weekly meal schedule - full width, its own grid needs the room */}
+        <div className="mt-6">
+          <MealScheduleSection elderId={id} />
+        </div>
       </main>
+
+      {showMoodModal && (
+        <MoodCheckinModal elder={elder} onClose={() => setShowMoodModal(false)} />
+      )}
 
       {confirmingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 backdrop-blur-sm">

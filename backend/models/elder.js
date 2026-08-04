@@ -21,6 +21,15 @@ const emergencyContactSchema = new mongoose.Schema({
     },
 });
 
+const nutritionPlanSchema = new mongoose.Schema({
+  dietType: String,
+  calorieGoal: Number,
+  waterGoal: Number,
+  proteinGoal: Number,
+  restrictions: [String],
+  supplements: [String],
+});
+
 const elderSchema = new mongoose.Schema(
 {
     caregiver: {
@@ -57,6 +66,9 @@ const elderSchema = new mongoose.Schema(
     chronicDiseases: [String],
 
     emergencyContacts: [emergencyContactSchema],
+
+   
+    nutritionPlan: nutritionPlanSchema,
 },
 {
     timestamps: true,
