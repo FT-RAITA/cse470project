@@ -60,7 +60,9 @@ export default function Register() {
       });
       login(data.user, data.token);
       toast.success("Account created — welcome!");
-      navigate("/dashboard");
+      navigate(
+        data.user?.role === "family_member" ? "/appointments" : "/dashboard"
+      );
     } catch (err) {
       const message =
         err.response?.data?.message ||
