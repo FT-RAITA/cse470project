@@ -3,9 +3,10 @@ import Elder from '../models/elder.js';
 // Create a new elder
 export const createElder = async (req, res) => {
   try {
-    const { fullName, age, dateOfBirth, gender, bloodGroup, phone, address, medicalHistory, allergies, chronicDiseases, emergencyContacts} = req.body;
-    const caregiver = req.user.id; 
-    const newElder = new Elder({  caregiver, fullName, age, dateOfBirth, gender, bloodGroup, phone, address, medicalHistory, allergies, chronicDiseases, emergencyContacts, caregiver });
+    const { fullName, age, dateOfBirth, gender, bloodGroup, phone, address, medicalHistory, allergies, chronicDiseases, emergencyContacts, nutritionPlan } = req.body;
+    const caregiver = req.user.id;
+    const elderID = `ELD-${Date.now().toString().slice(-6)}`;
+    const newElder = new Elder({  elderID, caregiver, fullName, age, dateOfBirth, gender, bloodGroup, phone, address, medicalHistory, allergies, chronicDiseases, emergencyContacts, nutritionPlan });
     const savedElder = await newElder.save();
     res.status(201).json(savedElder);
   } catch (error) {
