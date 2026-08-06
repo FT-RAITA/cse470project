@@ -41,7 +41,9 @@ export default function Login() {
       const data = await loginUser(form);
       login(data.user, data.token);
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      navigate(
+        data.user?.role === "family_member" ? "/appointments" : "/dashboard"
+      );
     } catch (err) {
       const message =
         err.response?.data?.message || "Couldn't log you in. Please try again.";
