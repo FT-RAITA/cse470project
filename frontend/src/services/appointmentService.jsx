@@ -32,14 +32,17 @@ export const getAppointmentStats = (token) => {
   return axios.get(`${API}/stats`, authHeaders(token));
 };
 
+// data: { elder, purpose, date, time, durationMinutes?, specialNotes? }
 export const createAppointment = (data, token) => {
   return axios.post(API, data, authHeaders(token));
 };
 
-export const updateAppointmentStatus = (id, status, token) => {
-  return axios.patch(`${API}/${id}/status`, { status }, authHeaders(token));
+// extra: optional { caregiverResponse, rejectionReason }
+export const updateAppointmentStatus = (id, status, token, extra = {}) => {
+  return axios.patch(`${API}/${id}/status`, { status, ...extra }, authHeaders(token));
 };
 
+// data: any of { purpose, date, time, durationMinutes, specialNotes, elder }
 export const updateAppointment = (id, data, token) => {
   return axios.put(`${API}/${id}`, data, authHeaders(token));
 };

@@ -1,18 +1,27 @@
 import MealSchedule from "../models/mealSchedule.js";
 import Elder from "../models/elder.js";
 
-export const assertElderOwnership = async (elderId, caregiverId) => {
+// Caregiver OR a connected family member can read
+const assertReadAccess = async (elderId, userId) => {
   return await Elder.findOne({
     _id: elderId,
-    caregiver: caregiverId,
+    $or: [
+      { caregiver: userId },
+      { "familyMembers.user": userId },
+    ],
   });
+};
+
+// Only the owning caregiver can write
+const assertWriteAccess = async (elderId, caregiverId) => {
+  return await Elder.findOne({ _id: elderId, caregiver: caregiverId });
 };
 
 export const createMealSchedule = async (req, res) => {
   try {
     const { elder, day, mealType, time, food, notes } = req.body;
 
-    const owner = await assertElderOwnership(elder, req.user.id);
+    const owner = await assertWriteAccess(elder, req.user.id);
 
     if (!owner) {
       return res.status(404).json({
@@ -43,7 +52,7 @@ export const getMealSchedulesByElder = async (req, res) => {
   try {
     const { elderid } = req.params;
 
-    const elder = await assertElderOwnership(elderid, req.user.id);
+    const elder = await assertReadAccess(elderid, req.user.id);
 
     if (!elder) {
       return res.status(404).json({
@@ -78,7 +87,7 @@ export const updateMealSchedule = async (req, res) => {
       });
     }
 
-    const owner = await assertElderOwnership(meal.elder, req.user.id);
+    const owner = await assertWriteAccess(meal.elder, req.user.id);
 
     if (!owner) {
       return res.status(403).json({
@@ -115,7 +124,7 @@ export const deleteMealSchedule = async (req, res) => {
       });
     }
 
-    const owner = await assertElderOwnership(meal.elder, req.user.id);
+    const owner = await assertWriteAccess(meal.elder, req.user.id);
 
     if (!owner) {
       return res.status(403).json({

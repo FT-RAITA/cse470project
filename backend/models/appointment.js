@@ -14,84 +14,38 @@ const appointmentSchema = new mongoose.Schema(
       required: true,
     },
 
-    visitorName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    visitorEmail: {
-      type: String,
-      required: true,
-      lowercase: true,
-      trim: true,
-    },
-
-    visitorPhone: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    relation: {
-      type: String,
-      required: true,
-      enum: [
-        "Son",
-        "Daughter",
-        "Spouse",
-        "Sibling",
-        "Grandchild",
-        "Friend",
-        "Relative",
-        "Other",
-      ],
-    },
-
     purpose: {
       type: String,
       required: true,
       trim: true,
     },
 
-    priority: {
-      type: String,
-      enum: ["Normal", "Important", "Emergency Request"],
-      default: "Normal",
-    },
-
-    preferredDate: {
+    appointmentDateTime: {
       type: Date,
       required: true,
     },
 
-    preferredTime: {
-      type: String,
-      required: true,
-    },
-
-    expectedDuration: {
-      type: String,
-      required: true,
-      enum: ["30 minutes", "1 hour", "1.5 hours", "2 hours"],
-    },
-
-    numberOfVisitors: {
+    durationMinutes: {
       type: Number,
-      required: true,
-      min: 1,
-      max: 5,
+      default: 60,
+      enum: [30, 60, 90, 120],
     },
 
     specialNotes: {
       type: String,
-      trim: true,
       default: "",
+      trim: true,
     },
 
     status: {
       type: String,
-      enum: ["Pending", "Approved", "Rejected", "Completed", "Cancelled"],
+      enum: [
+        "Pending",
+        "Approved",
+        "Rejected",
+        "Completed",
+        "Cancelled",
+      ],
       default: "Pending",
     },
 
@@ -105,13 +59,44 @@ const appointmentSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    caregiverResponse: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    rejectionReason: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    cancelledBy: {
+      type: String,
+      enum: ["Visitor", "Caregiver", null],
+      default: null,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-appointmentSchema.index({ elder: 1, preferredDate: 1, preferredTime: 1, status: 1 });
-appointmentSchema.index({ visitor: 1, createdAt: -1 });
-appointmentSchema.index({ status: 1, preferredDate: 1 });
+appointmentSchema.index({
+  elder: 1,
+  appointmentDateTime: 1,
+});
+
+appointmentSchema.index({
+  visitor: 1,
+  createdAt: -1,
+});
+
+appointmentSchema.index({
+  status: 1,
+  appointmentDateTime: 1,
+});
 
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 

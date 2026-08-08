@@ -1,24 +1,24 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const medicalHistorySchema = new mongoose.Schema({
-    condition: {
-        type: String,
-        required: true,
-    },
-    diagnosisDate: Date,
-    notes: String,
+  condition: {
+    type: String,
+    required: true,
+  },
+  diagnosisDate: Date,
+  notes: String,
 });
 
 const emergencyContactSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-    },
-    relation: String,
-    phone: {
-        type: String,
-        required: true,
-    },
+  name: {
+    type: String,
+    required: true,
+  },
+  relation: String,
+  phone: {
+    type: String,
+    required: true,
+  },
 });
 
 const nutritionPlanSchema = new mongoose.Schema({
@@ -30,33 +30,74 @@ const nutritionPlanSchema = new mongoose.Schema({
   supplements: [String],
 });
 
+// NEW: Family member subdocument
+const familyMemberSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+
+  relation: {
+    type: String,
+    enum: [
+      "Son",
+      "Daughter",
+      "Spouse",
+      "Sibling",
+      "Grandchild",
+      "Friend",
+      "Relative",
+      "Other",
+    ],
+    required: true,
+  },
+
+  addedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const elderSchema = new mongoose.Schema(
-{
+  {
     caregiver: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
 
+    elderID: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+
+    // UPDATED
+    familyMembers: [familyMemberSchema],
+
     fullName: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
+      trim: true,
     },
 
     age: Number,
+
     dateOfBirth: Date,
 
     gender: {
-        type: String,
-        enum: ["Male", "Female", "Other"],
+      type: String,
+      enum: ["Male", "Female", "Other"],
     },
 
     bloodGroup: {
-        type: String,
-        enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
+      type: String,
+      enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
     },
 
     phone: String,
+
     address: String,
 
     medicalHistory: [medicalHistorySchema],
@@ -67,12 +108,12 @@ const elderSchema = new mongoose.Schema(
 
     emergencyContacts: [emergencyContactSchema],
 
-   
     nutritionPlan: nutritionPlanSchema,
-},
-{
+  },
+  {
     timestamps: true,
-});
+  }
+);
 
 const Elder = mongoose.model("Elder", elderSchema);
 

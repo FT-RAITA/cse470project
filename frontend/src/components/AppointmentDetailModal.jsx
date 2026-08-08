@@ -4,24 +4,15 @@ import Button from "./Button";
 import InputField from "./InputField";
 import {
   StatusBadge,
-  PriorityLabel,
   VisitorBadge,
   VisitTimeline,
   formatDate,
+  formatTime,
+  formatDateInput,
+  durationLabel,
+  TIME_SLOTS,
+  DURATION_OPTIONS,
 } from "./AppointmentBadges";
-
-const RELATIONS = [
-  "Son",
-  "Daughter",
-  "Spouse",
-  "Sibling",
-  "Grandchild",
-  "Friend",
-  "Relative",
-  "Other",
-];
-const DURATIONS = ["30 minutes", "1 hour", "1.5 hours", "2 hours"];
-const PRIORITIES = ["Normal", "Important", "Emergency Request"];
 
 export default function AppointmentDetailModal({
   appointment,
@@ -33,18 +24,10 @@ export default function AppointmentDetailModal({
 }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
-    visitorName: appointment.visitorName || "",
-    visitorEmail: appointment.visitorEmail || "",
-    visitorPhone: appointment.visitorPhone || "",
-    relation: appointment.relation || "",
     purpose: appointment.purpose || "",
-    priority: appointment.priority || "Normal",
-    preferredDate: appointment.preferredDate
-      ? new Date(appointment.preferredDate).toISOString().slice(0, 10)
-      : "",
-    preferredTime: appointment.preferredTime || "",
-    expectedDuration: appointment.expectedDuration || "1 hour",
-    numberOfVisitors: appointment.numberOfVisitors || 1,
+    date: formatDateInput(appointment.appointmentDateTime),
+    time: formatTime(appointment.appointmentDateTime),
+    durationMinutes: appointment.durationMinutes || 60,
     specialNotes: appointment.specialNotes || "",
   });
 
@@ -56,6 +39,32 @@ export default function AppointmentDetailModal({
   const canAct =
     isCaregiver &&
     ["Pending", "Approved"].includes(appointment.status);
+
+  const detailRows = [
+    ["Visitor", appointment.visitor?.name || "—"],
+    ["Email", appointment.visitor?.email || "—"],
+    ["Phone", appointment.visitor?.phone || "—"],
+    ["Elder", appointment.elder?.fullName],
+    ["Purpose", appointment.purpose],
+    ["Date", formatDate(appointment.appointmentDateTime)],
+    ["Time", formatTime(appointment.appointmentDateTime)],
+    ["Duration", durationLabel(appointment.durationMinutes)],
+    ["Notes", appointment.specialNotes || "—"],
+    ["Approved by", appointment.approvedBy?.name || "—"],
+    [
+      "Approval time",
+      appointment.approvalTime
+        ? new Date(appointment.approvalTime).toLocaleString()
+        : "—",
+    ],
+  ];
+
+  if (appointment.status === "Rejected" && appointment.rejectionReason) {
+    detailRows.push(["Rejection reason", appointment.rejectionReason]);
+  }
+  if (appointment.caregiverResponse) {
+    detailRows.push(["Caregiver's note", appointment.caregiverResponse]);
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 py-6 backdrop-blur-sm">
@@ -90,64 +99,87 @@ export default function AppointmentDetailModal({
 
           {editing ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              <InputField size="md" label="Visitor name" name="visitorName" value={form.visitorName} onChange={update} />
-              <InputField size="md" label="Email" name="visitorEmail" value={form.visitorEmail} onChange={update} />
-              <InputField size="md" label="Phone" name="visitorPhone" value={form.visitorPhone} onChange={update} mono />
-              <InputField size="md" label="Relation" name="relation" as="select" options={RELATIONS} value={form.relation} onChange={update} />
-              <InputField size="md" label="Date" type="date" name="preferredDate" value={form.preferredDate} onChange={update} mono />
-              <InputField size="md" label="Time" name="preferredTime" value={form.preferredTime} onChange={update} mono />
-              <InputField size="md" label="Duration" name="expectedDuration" as="select" options={DURATIONS} value={form.expectedDuration} onChange={update} />
-              <InputField size="md" label="Priority" name="priority" as="select" options={PRIORITIES} value={form.priority} onChange={update} />
-              <InputField size="md" label="Visitors" type="number" name="numberOfVisitors" value={form.numberOfVisitors} onChange={update} />
-              <div className="sm:col-span-2">
-                <InputField size="md" label="Purpose" name="purpose" as="textarea" rows={2} value={form.purpose} onChange={update} />
+              <InputField
+                size="md"
+                label="Date"
+                type="date"
+                name="date"
+                value={form.date}
+                onChange={update}
+                mono
+              />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
+                  Time
+                </label>
+                <select
+                  name="time"
+                  value={form.time}
+                  onChange={update}
+                  className="w-full rounded-lg border border-border bg-paper-card px-3.5 py-2.5 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
+                >
+                  {TIME_SLOTS.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
+                  Duration
+                </label>
+                <select
+                  name="durationMinutes"
+                  value={form.durationMinutes}
+                  onChange={update}
+                  className="w-full rounded-lg border border-border bg-paper-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
+                >
+                  {DURATION_OPTIONS.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="sm:col-span-2">
-                <InputField size="md" label="Special notes" name="specialNotes" as="textarea" rows={2} value={form.specialNotes} onChange={update} />
+                <InputField
+                  size="md"
+                  label="Purpose"
+                  name="purpose"
+                  as="textarea"
+                  rows={2}
+                  value={form.purpose}
+                  onChange={update}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <InputField
+                  size="md"
+                  label="Special notes"
+                  name="specialNotes"
+                  as="textarea"
+                  rows={2}
+                  value={form.specialNotes}
+                  onChange={update}
+                />
               </div>
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                ["Visitor", appointment.visitorName],
-                ["Email", appointment.visitorEmail],
-                ["Phone", appointment.visitorPhone],
-                ["Relation", appointment.relation],
-                ["Elder", appointment.elder?.fullName],
-                ["Purpose", appointment.purpose],
-                ["Date", formatDate(appointment.preferredDate)],
-                ["Time", appointment.preferredTime],
-                ["Duration", appointment.expectedDuration],
-                ["Visitors", appointment.numberOfVisitors],
-                ["Priority", null],
-                ["Notes", appointment.specialNotes || "—"],
-                [
-                  "Approved by",
-                  appointment.approvedBy?.name || "—",
-                ],
-                [
-                  "Approval time",
-                  appointment.approvalTime
-                    ? new Date(appointment.approvalTime).toLocaleString()
-                    : "—",
-                ],
-              ].map(([label, value]) => (
+              {detailRows.map(([label, value]) => (
                 <div
                   key={label}
                   className={`rounded-lg border border-border bg-paper px-3.5 py-3 ${
-                    label === "Purpose" || label === "Notes" ? "sm:col-span-2" : ""
+                    ["Purpose", "Notes", "Rejection reason", "Caregiver's note"].includes(label)
+                      ? "sm:col-span-2"
+                      : ""
                   }`}
                 >
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-soft">
                     {label}
                   </p>
-                  <div className="mt-1 text-sm font-medium text-ink">
-                    {label === "Priority" ? (
-                      <PriorityLabel priority={appointment.priority} />
-                    ) : (
-                      value
-                    )}
-                  </div>
+                  <div className="mt-1 text-sm font-medium text-ink">{value}</div>
                 </div>
               ))}
             </div>
@@ -173,7 +205,7 @@ export default function AppointmentDetailModal({
                 onClick={() =>
                   onSaveEdit(appointment._id, {
                     ...form,
-                    numberOfVisitors: Number(form.numberOfVisitors),
+                    durationMinutes: Number(form.durationMinutes),
                   }).then(() => setEditing(false))
                 }
               >

@@ -35,9 +35,9 @@ function formatDateTime(d) {
   });
 }
 
-export default function MoodCheckinModal({ elder, onClose }) {
+export default function MoodCheckinModal({ elder, onClose, readOnly = false }) {
   const { token } = useAuth();
-  const [tab, setTab] = useState("new"); // "new" | "history"
+  const [tab, setTab] = useState(readOnly ? "history" : "new"); // "new" | "history"
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -131,33 +131,35 @@ export default function MoodCheckinModal({ elder, onClose }) {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-border px-6 pt-3">
-          <button
-            onClick={() => setTab("new")}
-            className={`rounded-t-lg px-3.5 py-2 text-sm font-medium transition-colors ${
-              tab === "new"
-                ? "border-b-2 border-primary text-primary"
-                : "text-ink-soft hover:text-ink"
-            }`}
-          >
-            New check-in
-          </button>
-          <button
-            onClick={() => setTab("history")}
-            className={`flex items-center gap-1.5 rounded-t-lg px-3.5 py-2 text-sm font-medium transition-colors ${
-              tab === "history"
-                ? "border-b-2 border-primary text-primary"
-                : "text-ink-soft hover:text-ink"
-            }`}
-          >
-            <History size={13} strokeWidth={2} />
-            History
-          </button>
-        </div>
+        {/* Tabs — read-only users (family members) only get History */}
+        {!readOnly && (
+          <div className="flex gap-1 border-b border-border px-6 pt-3">
+            <button
+              onClick={() => setTab("new")}
+              className={`rounded-t-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+                tab === "new"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-ink-soft hover:text-ink"
+              }`}
+            >
+              New check-in
+            </button>
+            <button
+              onClick={() => setTab("history")}
+              className={`flex items-center gap-1.5 rounded-t-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+                tab === "history"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-ink-soft hover:text-ink"
+              }`}
+            >
+              <History size={13} strokeWidth={2} />
+              History
+            </button>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {tab === "new" ? (
+          {tab === "new" && !readOnly ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <InputField
                 size="md"
@@ -249,13 +251,15 @@ export default function MoodCheckinModal({ elder, onClose }) {
                     <p className="font-mono text-xs text-ink-soft">
                       {formatDateTime(c.date)}
                     </p>
-                    <button
-                      onClick={() => handleDelete(c._id)}
-                      className="rounded-md p-1 text-ink-soft hover:bg-rose-soft hover:text-rose"
-                      aria-label="Delete check-in"
-                    >
-                      <Trash2 size={13} strokeWidth={2} />
-                    </button>
+                    {!readOnly && (
+                      <button
+                        onClick={() => handleDelete(c._id)}
+                        className="rounded-md p-1 text-ink-soft hover:bg-rose-soft hover:text-rose"
+                        aria-label="Delete check-in"
+                      >
+                        <Trash2 size={13} strokeWidth={2} />
+                      </button>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <Badge label="Mood" value={c.overallMood} />

@@ -1,19 +1,29 @@
 import MoodCheckin from '../models/MoodCheckin.js';
 import Elder from '../models/elder.js';
 
-//  elder belongs to this caregiver 
-const assertElderOwnership = async (elderId, caregiverId) => {
-  const elder = await Elder.findOne({ _id: elderId, caregiver: caregiverId });
-  return elder;
+// Caregiver OR a connected family member can read
+const assertReadAccess = async (elderId, userId) => {
+  return await Elder.findOne({
+    _id: elderId,
+    $or: [
+      { caregiver: userId },
+      { "familyMembers.user": userId },
+    ],
+  });
 };
 
-// Create a mood check-in for an elder
+// Only the owning caregiver can write
+const assertWriteAccess = async (elderId, caregiverId) => {
+  return await Elder.findOne({ _id: elderId, caregiver: caregiverId });
+};
+
+// Create a mood check-in for an elder (caregiver only)
 export const createMoodCheckin = async (req, res) => {
   try {
-    const { id } = req.params; 
+    const { id } = req.params;
     const caregiver = req.user.id;
 
-    const elder = await assertElderOwnership(id, caregiver);
+    const elder = await assertWriteAccess(id, caregiver);
     if (!elder) {
       return res.status(404).json({ message: 'Elder not found' });
     }
@@ -39,13 +49,13 @@ export const createMoodCheckin = async (req, res) => {
   }
 };
 
-// mood check-in history
+// Mood check-in history (caregiver or connected family member)
 export const getMoodCheckins = async (req, res) => {
   try {
-    const { id } = req.params; 
-    const caregiver = req.user.id;
+    const { id } = req.params;
+    const userId = req.user.id;
 
-    const elder = await assertElderOwnership(id, caregiver);
+    const elder = await assertReadAccess(id, userId);
     if (!elder) {
       return res.status(404).json({ message: 'Elder not found' });
     }
@@ -57,7 +67,7 @@ export const getMoodCheckins = async (req, res) => {
   }
 };
 
-// Get a single check-in
+// Get a single check-in (caregiver who created it)
 export const getMoodCheckinById = async (req, res) => {
   try {
     const { checkinId } = req.params;
@@ -73,7 +83,7 @@ export const getMoodCheckinById = async (req, res) => {
   }
 };
 
-// Delete a check-in
+// Delete a check-in (caregiver only)
 export const deleteMoodCheckin = async (req, res) => {
   try {
     const { checkinId } = req.params;

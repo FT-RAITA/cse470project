@@ -24,7 +24,7 @@ const MEAL_TYPES = ["Breakfast", "Lunch", "Snack", "Dinner"];
 
 const emptyForm = { time: "", food: "", notes: "" };
 
-export default function MealScheduleSection({ elderId }) {
+export default function MealScheduleSection({ elderId, readOnly = false }) {
   const { token } = useAuth();
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +55,7 @@ export default function MealScheduleSection({ elderId }) {
     schedules.find((m) => m.day === day && m.mealType === mealType);
 
   const openSlot = (day, mealType) => {
+    if (readOnly) return;
     const existing = findMeal(day, mealType);
     setActiveSlot({ day, mealType, editingId: existing?._id || null });
     setForm(
@@ -153,10 +154,13 @@ export default function MealScheduleSection({ elderId }) {
                       <td key={day}>
                         <button
                           onClick={() => openSlot(day, mealType)}
+                          disabled={readOnly && !meal}
                           className={`flex h-16 w-full flex-col items-center justify-center gap-0.5 rounded-lg border text-xs transition-colors ${
                             meal
-                              ? "border-border bg-paper text-ink hover:border-primary"
-                              : "border-dashed border-border text-ink-soft hover:border-primary hover:text-primary"
+                              ? `border-border bg-paper text-ink ${readOnly ? "" : "hover:border-primary"}`
+                              : readOnly
+                                ? "border-dashed border-border/60 text-ink-soft/40"
+                                : "border-dashed border-border text-ink-soft hover:border-primary hover:text-primary"
                           }`}
                         >
                           {meal ? (
@@ -168,6 +172,8 @@ export default function MealScheduleSection({ elderId }) {
                                 {meal.food}
                               </span>
                             </>
+                          ) : readOnly ? (
+                            <span>—</span>
                           ) : (
                             <Plus size={14} strokeWidth={2} />
                           )}

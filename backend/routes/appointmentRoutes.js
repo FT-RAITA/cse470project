@@ -1,6 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireRole } from "../middleware/role.js";
+
 import {
   getBookableElders,
   getAvailableSlots,
@@ -16,17 +17,22 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get("/appointments/elders", getBookableElders);
-router.get("/appointments/slots", getAvailableSlots);
-router.get("/appointments/stats", getAppointmentStats);
+// GET
+router.get("/elders", getBookableElders);
+router.get("/slots", getAvailableSlots);
+router.get("/stats", getAppointmentStats);
+router.get("/", getAppointments);
+router.get("/:id", getAppointmentById);
 
-router.post("/appointments", createAppointment);
-router.get("/appointments", getAppointments);
-router.get("/appointments/:id", getAppointmentById);
+// POST
+router.post("/", createAppointment);
 
-router.patch("/appointments/:id/status", updateAppointmentStatus);
+// PATCH
+router.patch("/:id/status", updateAppointmentStatus);
+
+// PUT
 router.put(
-  "/appointments/:id",
+  "/:id",
   requireRole("caregiver", "admin"),
   updateAppointment
 );

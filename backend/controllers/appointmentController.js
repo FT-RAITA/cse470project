@@ -13,9 +13,7 @@ export const TIME_SLOTS = [
   "17:00",
 ];
 
-const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
-const PHONE_REGEX = /^[0-9+\-\s()]{8,15}$/;
-const MAX_VISITORS = 5;
+const DURATIONS = [30, 60, 90, 120];
 const ACTIVE_SLOT_STATUSES = ["Pending", "Approved"];
 
 const startOfDay = (date) => {
@@ -35,40 +33,36 @@ const isPastDate = (date) => {
   return startOfDay(date) < today;
 };
 
-const validateAppointmentInput = (body) => {
+// Combine a "YYYY-MM-DD" date and "HH:mm" time (must be one of TIME_SLOTS) into a Date
+const combineDateAndTime = (date, time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  const combined = new Date(date);
+  combined.setHours(hours, minutes, 0, 0);
+  return combined;
+};
+
+const validateCreateInput = (body) => {
   const errors = [];
 
   if (!body.elder) errors.push("Please select an elder.");
-  if (!body.visitorName?.trim()) errors.push("Visitor name is required.");
-  if (!body.visitorEmail?.trim()) errors.push("Visitor email is required.");
-  else if (!EMAIL_REGEX.test(body.visitorEmail)) errors.push("Email format is invalid.");
-  if (!body.visitorPhone?.trim()) errors.push("Visitor phone is required.");
-  else if (!PHONE_REGEX.test(body.visitorPhone)) errors.push("Phone format is invalid.");
-  if (!body.relation) errors.push("Relation to elder is required.");
   if (!body.purpose?.trim()) errors.push("Purpose of visit is required.");
-  if (!body.preferredDate) errors.push("Preferred date is required.");
-  else if (isPastDate(body.preferredDate)) errors.push("Date cannot be in the past.");
-  if (!body.preferredTime) errors.push("Preferred time is required.");
-  else if (!TIME_SLOTS.includes(body.preferredTime)) {
+  if (!body.date) errors.push("Preferred date is required.");
+  else if (isPastDate(body.date)) errors.push("Date cannot be in the past.");
+  if (!body.time) errors.push("Preferred time is required.");
+  else if (!TIME_SLOTS.includes(body.time)) {
     errors.push("Please select a valid time slot.");
   }
-  if (!body.expectedDuration) errors.push("Expected duration is required.");
-  if (!body.numberOfVisitors) errors.push("Number of visitors is required.");
-  else if (body.numberOfVisitors < 1 || body.numberOfVisitors > MAX_VISITORS) {
-    errors.push(`Number of visitors must be between 1 and ${MAX_VISITORS}.`);
+  if (body.durationMinutes && !DURATIONS.includes(Number(body.durationMinutes))) {
+    errors.push("Please select a valid duration.");
   }
 
   return errors;
 };
 
-const findSlotConflict = async ({ elder, preferredDate, preferredTime, excludeId = null }) => {
+const findSlotConflict = async ({ elder, appointmentDateTime, excludeId = null }) => {
   const query = {
     elder,
-    preferredTime,
-    preferredDate: {
-      $gte: startOfDay(preferredDate),
-      $lte: endOfDay(preferredDate),
-    },
+    appointmentDateTime,
     status: { $in: ACTIVE_SLOT_STATUSES },
   };
 
@@ -101,6 +95,22 @@ const caregiverElderIds = async (caregiverId) => {
   return elders.map((e) => e._id);
 };
 
+const withCountdown = (appointment) => {
+  const obj = appointment.toObject ? appointment.toObject() : appointment;
+  const visitDate = startOfDay(obj.appointmentDateTime);
+  const now = startOfDay(new Date());
+  const diffDays = Math.round((visitDate - now) / (1000 * 60 * 60 * 24));
+  obj.countdown =
+    obj.status === "Approved" || obj.status === "Pending"
+      ? diffDays > 0
+        ? `Your visit is in ${diffDays} day${diffDays === 1 ? "" : "s"}`
+        : diffDays === 0
+          ? "Your visit is today"
+          : "Visit date has passed"
+      : null;
+  return obj;
+};
+
 // Elders available for booking dropdown (id + name only)
 export const getBookableElders = async (req, res) => {
   try {
@@ -111,8 +121,8 @@ export const getBookableElders = async (req, res) => {
         .select("fullName age gender")
         .sort({ fullName: 1 });
     } else {
-      // Visitors can book visits with any elder in the system
-      elders = await Elder.find()
+      // Family members can only book for elders they're connected to
+      elders = await Elder.find({ "familyMembers.user": req.user.id })
         .select("fullName age gender")
         .sort({ fullName: 1 });
     }
@@ -143,11 +153,16 @@ export const getAvailableSlots = async (req, res) => {
 
     const booked = await Appointment.find({
       elder: elderId,
-      preferredDate: { $gte: startOfDay(date), $lte: endOfDay(date) },
+      appointmentDateTime: { $gte: startOfDay(date), $lte: endOfDay(date) },
       status: { $in: ACTIVE_SLOT_STATUSES },
-    }).select("preferredTime status");
+    }).select("appointmentDateTime status");
 
-    const bookedTimes = new Set(booked.map((a) => a.preferredTime));
+    const bookedTimes = new Set(
+      booked.map((a) => {
+        const d = new Date(a.appointmentDateTime);
+        return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      })
+    );
 
     const slots = TIME_SLOTS.map((time) => ({
       time,
@@ -161,10 +176,10 @@ export const getAvailableSlots = async (req, res) => {
   }
 };
 
-// Create appointment (visitor or caregiver on behalf)
+// Create appointment (family member or caregiver on behalf)
 export const createAppointment = async (req, res) => {
   try {
-    const errors = validateAppointmentInput(req.body);
+    const errors = validateCreateInput(req.body);
     if (errors.length) {
       return res.status(400).json({ message: errors[0], errors });
     }
@@ -175,19 +190,23 @@ export const createAppointment = async (req, res) => {
     }
 
     // Caregivers may only book for their own elders
-    if (
-      req.user.role === "caregiver" &&
-      elder.caregiver.toString() !== req.user.id
-    ) {
-      return res.status(403).json({ message: "You can only book visits for your elders." });
+    if (req.user.role === "caregiver") {
+      if (elder.caregiver.toString() !== req.user.id) {
+        return res.status(403).json({ message: "You can only book visits for your elders." });
+      }
+    } else {
+      // Family members may only book for elders they're connected to
+      const connected = elder.familyMembers.some(
+        (m) => m.user.toString() === req.user.id
+      );
+      if (!connected) {
+        return res.status(403).json({ message: "You're not connected to this elder." });
+      }
     }
 
-    const conflict = await findSlotConflict({
-      elder: req.body.elder,
-      preferredDate: req.body.preferredDate,
-      preferredTime: req.body.preferredTime,
-    });
+    const appointmentDateTime = combineDateAndTime(req.body.date, req.body.time);
 
+    const conflict = await findSlotConflict({ elder: req.body.elder, appointmentDateTime });
     if (conflict) {
       return res.status(409).json({
         message: "This slot is already occupied.",
@@ -198,11 +217,7 @@ export const createAppointment = async (req, res) => {
     const duplicate = await Appointment.findOne({
       visitor: req.user.id,
       elder: req.body.elder,
-      preferredTime: req.body.preferredTime,
-      preferredDate: {
-        $gte: startOfDay(req.body.preferredDate),
-        $lte: endOfDay(req.body.preferredDate),
-      },
+      appointmentDateTime,
       status: { $in: ACTIVE_SLOT_STATUSES },
     });
 
@@ -215,16 +230,9 @@ export const createAppointment = async (req, res) => {
     const appointment = await Appointment.create({
       visitor: req.user.id,
       elder: req.body.elder,
-      visitorName: req.body.visitorName.trim(),
-      visitorEmail: req.body.visitorEmail.trim().toLowerCase(),
-      visitorPhone: req.body.visitorPhone.trim(),
-      relation: req.body.relation,
       purpose: req.body.purpose.trim(),
-      priority: req.body.priority || "Normal",
-      preferredDate: startOfDay(req.body.preferredDate),
-      preferredTime: req.body.preferredTime,
-      expectedDuration: req.body.expectedDuration,
-      numberOfVisitors: Number(req.body.numberOfVisitors),
+      appointmentDateTime,
+      durationMinutes: req.body.durationMinutes || 60,
       specialNotes: req.body.specialNotes?.trim() || "",
       status: "Pending",
     });
@@ -263,25 +271,25 @@ export const getAppointments = async (req, res) => {
     }
 
     if (filter === "today") {
-      query.preferredDate = { $gte: todayStart, $lte: todayEnd };
+      query.appointmentDateTime = { $gte: todayStart, $lte: todayEnd };
     } else if (filter === "upcoming") {
-      query.preferredDate = { $gte: todayStart };
+      query.appointmentDateTime = { $gte: todayStart };
       query.status = { $in: ["Pending", "Approved"] };
     }
 
     let appointments = await populateAppointment(
-      Appointment.find(query).sort({ preferredDate: 1, preferredTime: 1 })
+      Appointment.find(query).sort({ appointmentDateTime: 1 })
     );
 
     if (search?.trim()) {
       const q = search.trim().toLowerCase();
       appointments = appointments.filter((a) => {
-        const dateStr = new Date(a.preferredDate).toISOString().slice(0, 10);
+        const dateStr = new Date(a.appointmentDateTime).toISOString().slice(0, 10);
         return (
-          a.visitorName?.toLowerCase().includes(q) ||
           a.purpose?.toLowerCase().includes(q) ||
           a.status?.toLowerCase().includes(q) ||
           a.elder?.fullName?.toLowerCase().includes(q) ||
+          a.visitor?.name?.toLowerCase().includes(q) ||
           dateStr.includes(q)
         );
       });
@@ -289,19 +297,8 @@ export const getAppointments = async (req, res) => {
 
     const withMeta = await Promise.all(
       appointments.map(async (a) => {
-        const obj = a.toObject();
+        const obj = withCountdown(a);
         obj.visitorBadge = await getVisitorBadge(a.visitor?._id || a.visitor);
-        const visitDate = startOfDay(a.preferredDate);
-        const now = startOfDay(new Date());
-        const diffDays = Math.round((visitDate - now) / (1000 * 60 * 60 * 24));
-        obj.countdown =
-          a.status === "Approved" || a.status === "Pending"
-            ? diffDays > 0
-              ? `Your visit is in ${diffDays} day${diffDays === 1 ? "" : "s"}`
-              : diffDays === 0
-                ? "Your visit is today"
-                : "Visit date has passed"
-            : null;
         return obj;
       })
     );
@@ -331,20 +328,8 @@ export const getAppointmentById = async (req, res) => {
       return res.status(403).json({ message: "Access denied." });
     }
 
-    const obj = appointment.toObject();
+    const obj = withCountdown(appointment);
     obj.visitorBadge = await getVisitorBadge(appointment.visitor._id);
-
-    const visitDate = startOfDay(appointment.preferredDate);
-    const now = startOfDay(new Date());
-    const diffDays = Math.round((visitDate - now) / (1000 * 60 * 60 * 24));
-    obj.countdown =
-      appointment.status === "Approved" || appointment.status === "Pending"
-        ? diffDays > 0
-          ? `Your visit is in ${diffDays} day${diffDays === 1 ? "" : "s"}`
-          : diffDays === 0
-            ? "Your visit is today"
-            : "Visit date has passed"
-        : null;
 
     res.json(obj);
   } catch (error) {
@@ -370,7 +355,7 @@ export const getAppointmentStats = async (req, res) => {
       Appointment.countDocuments({ ...query, status: "Pending" }),
       Appointment.countDocuments({
         ...query,
-        preferredDate: { $gte: todayStart, $lte: todayEnd },
+        appointmentDateTime: { $gte: todayStart, $lte: todayEnd },
         status: { $in: ["Pending", "Approved"] },
       }),
       Appointment.countDocuments({
@@ -389,7 +374,7 @@ export const getAppointmentStats = async (req, res) => {
 
 export const updateAppointmentStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, caregiverResponse, rejectionReason } = req.body;
     const allowed = ["Approved", "Rejected", "Completed", "Cancelled"];
 
     if (!allowed.includes(status)) {
@@ -415,7 +400,7 @@ export const updateAppointmentStatus = async (req, res) => {
         return res.status(403).json({ message: "Access denied." });
       }
     } else if (isOwnerVisitor) {
-      // Visitors may only cancel their own pending requests
+      // Family members may only cancel their own pending requests
       if (status !== "Cancelled" || appointment.status !== "Pending") {
         return res.status(403).json({
           message: "You can only cancel your own pending requests.",
@@ -429,8 +414,7 @@ export const updateAppointmentStatus = async (req, res) => {
     if (status === "Approved") {
       const conflict = await findSlotConflict({
         elder: appointment.elder._id,
-        preferredDate: appointment.preferredDate,
-        preferredTime: appointment.preferredTime,
+        appointmentDateTime: appointment.appointmentDateTime,
         excludeId: appointment._id,
       });
 
@@ -442,6 +426,16 @@ export const updateAppointmentStatus = async (req, res) => {
 
       appointment.approvedBy = req.user.id;
       appointment.approvalTime = new Date();
+    }
+
+    if (status === "Cancelled") {
+      appointment.cancelledBy = isCaregiver ? "Caregiver" : "Visitor";
+    }
+    if (status === "Rejected" && rejectionReason) {
+      appointment.rejectionReason = rejectionReason.trim();
+    }
+    if (caregiverResponse) {
+      appointment.caregiverResponse = caregiverResponse.trim();
     }
 
     appointment.status = status;
@@ -493,37 +487,40 @@ export const updateAppointment = async (req, res) => {
       });
     }
 
-    const editable = [
-      "visitorName",
-      "visitorEmail",
-      "visitorPhone",
-      "relation",
-      "purpose",
-      "priority",
-      "preferredDate",
-      "preferredTime",
-      "expectedDuration",
-      "numberOfVisitors",
-      "specialNotes",
-      "elder",
-    ];
-
-    const updates = {};
-    for (const key of editable) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    if (req.body.purpose !== undefined) {
+      appointment.purpose = req.body.purpose.trim();
+    }
+    if (req.body.durationMinutes !== undefined) {
+      if (!DURATIONS.includes(Number(req.body.durationMinutes))) {
+        return res.status(400).json({ message: "Please select a valid duration." });
+      }
+      appointment.durationMinutes = Number(req.body.durationMinutes);
+    }
+    if (req.body.specialNotes !== undefined) {
+      appointment.specialNotes = req.body.specialNotes.trim();
+    }
+    if (req.body.elder !== undefined) {
+      appointment.elder = req.body.elder;
     }
 
-    const merged = { ...appointment.toObject(), ...updates };
-    const errors = validateAppointmentInput(merged);
-    if (errors.length) {
-      return res.status(400).json({ message: errors[0], errors });
-    }
+    // Rescheduling requires both date and time together
+    if (req.body.date || req.body.time) {
+      if (!req.body.date || !req.body.time) {
+        return res.status(400).json({
+          message: "Provide both date and time together to reschedule.",
+        });
+      }
+      if (isPastDate(req.body.date)) {
+        return res.status(400).json({ message: "Date cannot be in the past." });
+      }
+      if (!TIME_SLOTS.includes(req.body.time)) {
+        return res.status(400).json({ message: "Please select a valid time slot." });
+      }
 
-    if (updates.preferredDate || updates.preferredTime || updates.elder) {
+      const newDateTime = combineDateAndTime(req.body.date, req.body.time);
       const conflict = await findSlotConflict({
-        elder: updates.elder || appointment.elder._id,
-        preferredDate: updates.preferredDate || appointment.preferredDate,
-        preferredTime: updates.preferredTime || appointment.preferredTime,
+        elder: req.body.elder || appointment.elder._id,
+        appointmentDateTime: newDateTime,
         excludeId: appointment._id,
       });
 
@@ -532,13 +529,10 @@ export const updateAppointment = async (req, res) => {
           message: "This slot is already occupied.",
         });
       }
+
+      appointment.appointmentDateTime = newDateTime;
     }
 
-    if (updates.preferredDate) {
-      updates.preferredDate = startOfDay(updates.preferredDate);
-    }
-
-    Object.assign(appointment, updates);
     await appointment.save();
 
     const populated = await populateAppointment(

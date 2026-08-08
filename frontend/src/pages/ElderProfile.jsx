@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake, Smile, FolderHeart } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake, Smile, Copy, Check } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Button from "../components/Button";
 import MedicalHistoryCard from "../components/MedicalHistoryCard";
@@ -30,6 +30,7 @@ export default function ElderProfile() {
   const [loading, setLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [showMoodModal, setShowMoodModal] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
     fetchElder();
@@ -46,6 +47,13 @@ export default function ElderProfile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyElderId = () => {
+    navigator.clipboard.writeText(elder.elderID);
+    setCopiedId(true);
+    toast.success("Elder ID copied");
+    setTimeout(() => setCopiedId(false), 2000);
   };
 
   const handleDelete = async () => {
@@ -104,19 +112,28 @@ export default function ElderProfile() {
                   {elder.age ? `${elder.age} years old` : "Age not set"}
                   {elder.gender ? ` · ${elder.gender}` : ""}
                 </p>
+                {elder.elderID ? (
+                  <button
+                    onClick={copyElderId}
+                    className="mt-2 flex items-center gap-1.5 rounded-md border border-border bg-paper px-2.5 py-1 font-mono text-xs text-ink-soft transition-colors hover:border-primary hover:text-primary"
+                    title="Share this ID with family members so they can connect"
+                  >
+                    {elder.elderID}
+                    {copiedId ? (
+                      <Check size={12} strokeWidth={2.5} className="text-primary" />
+                    ) : (
+                      <Copy size={12} strokeWidth={2} />
+                    )}
+                  </button>
+                ) : (
+                  <p className="mt-2 text-xs text-rose">
+                    No Elder ID on file — this profile predates ID generation.
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2.5">
-              <Button
-                variant="primary"
-                icon={FolderHeart}
-                size="md"
-                fullWidth={false}
-                onClick={() => navigate(`/elders/${id}/records`)}
-              >
-                Records Portal
-              </Button>
+            <div className="flex gap-2.5">
               <Button
                 variant="accent"
                 icon={Smile}

@@ -14,9 +14,9 @@ import Button from "../components/Button";
 import AppointmentDetailModal from "../components/AppointmentDetailModal";
 import {
   StatusBadge,
-  PriorityLabel,
   VisitorBadge,
   formatDate,
+  formatTime,
 } from "../components/AppointmentBadges";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -258,7 +258,6 @@ export default function Appointments() {
                     <th className="px-4 py-3 font-semibold">Purpose</th>
                     <th className="px-4 py-3 font-semibold">Date</th>
                     <th className="px-4 py-3 font-semibold">Time</th>
-                    <th className="px-4 py-3 font-semibold">Priority</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Action</th>
                   </tr>
@@ -270,7 +269,7 @@ export default function Appointments() {
                       className="border-b border-border last:border-0 hover:bg-paper/60"
                     >
                       <td className="px-4 py-3">
-                        <div className="font-medium text-ink">{a.visitorName}</div>
+                        <div className="font-medium text-ink">{a.visitor?.name || "—"}</div>
                         <div className="mt-1">
                           <VisitorBadge badge={a.visitorBadge} />
                         </div>
@@ -280,13 +279,10 @@ export default function Appointments() {
                         {a.purpose}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-ink">
-                        {formatDate(a.preferredDate)}
+                        {formatDate(a.appointmentDateTime)}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-ink">
-                        {a.preferredTime}
-                      </td>
-                      <td className="px-4 py-3">
-                        <PriorityLabel priority={a.priority} />
+                        {formatTime(a.appointmentDateTime)}
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={a.status} />

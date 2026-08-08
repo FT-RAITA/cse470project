@@ -1,28 +1,22 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import {
-  LayoutGrid,
-  UserPlus,
-  LogOut,
-  HeartHandshake,
-  CalendarDays,
-  CalendarPlus,
-} from "lucide-react";
+import { LayoutGrid, UserPlus, LogOut, HeartHandshake, CalendarDays } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isCaregiver = user?.role === "caregiver" || user?.role === "admin";
+  const isCaregiver = user?.role === "caregiver";
 
   const links = [
+    {
+      to: isCaregiver ? "/dashboard" : "/family/dashboard",
+      label: "Dashboard",
+      icon: LayoutGrid,
+    },
     ...(isCaregiver
-      ? [
-          { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-          { to: "/elders/add", label: "Add Elder", icon: UserPlus },
-        ]
+      ? [{ to: "/elders/add", label: "Add Elder", icon: UserPlus }]
       : []),
     { to: "/appointments", label: "Appointments", icon: CalendarDays },
-    { to: "/appointments/book", label: "Book Visit", icon: CalendarPlus },
   ];
 
   const handleLogout = () => {
@@ -30,7 +24,7 @@ export default function Sidebar() {
     navigate("/login");
   };
 
-  const initials = (user?.name || "U")
+  const initials = (user?.name || "C")
     .split(" ")
     .map((n) => n[0])
     .slice(0, 2)
@@ -38,7 +32,7 @@ export default function Sidebar() {
     .toUpperCase();
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-border bg-paper-card">
+    <aside className="flex h-screen w-64 flex-col border-r border-border bg-paper-card">
       <div className="flex items-center gap-2.5 border-b border-border px-6 py-6">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-paper-card">
           <HeartHandshake size={18} strokeWidth={2} />
@@ -74,12 +68,10 @@ export default function Sidebar() {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-ink">
-              {user?.name || "User"}
+              {user?.name || "Caregiver"}
             </p>
-            <p className="truncate text-xs capitalize text-ink-soft">
-              {user?.role === "family_member"
-                ? "Visitor"
-                : user?.role || ""}
+            <p className="truncate text-xs text-ink-soft">
+              {user?.email || ""}
             </p>
           </div>
         </div>
