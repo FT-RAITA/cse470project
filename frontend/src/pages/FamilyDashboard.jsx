@@ -7,15 +7,25 @@ import {
   X,
   ChevronRight,
   User,
+  Bell,
+  AlertTriangle,
+  Check,
 } from "lucide-react";
 
 import Button from "../components/Button";
 import InputField from "../components/InputField";
 import { useAuth } from "../context/AuthContext";
+
 import {
   getMyElders,
   connectToElder,
 } from "../services/familyService";
+
+import {
+  getMyNotifications,
+  markNotificationAsRead,
+} from "../services/notificationService";
+
 
 const RELATIONS = [
   "Son",
@@ -44,12 +54,26 @@ function tintFor(id) {
   return tints[sum % tints.length];
 }
 
+
 export default function FamilyDashboard() {
   const { token, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [elders, setElders] = useState([]);
   const [loadingElders, setLoadingElders] = useState(true);
+
+  // -----------------------------------
+  // Notifications
+  // -----------------------------------
+
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+
+  // -----------------------------------
+  // Connect modal
+  // -----------------------------------
 
   const [showConnect, setShowConnect] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -59,29 +83,31 @@ export default function FamilyDashboard() {
     relation: "",
   });
 
+
   // -----------------------------------
   // Load connected elders
   // -----------------------------------
+
   useEffect(() => {
     if (authLoading) return;
 
     if (!token) {
-      console.log("No token available.");
       setLoadingElders(false);
       return;
     }
 
-    console.log("Family Dashboard TOKEN:", token);
-    console.log("Family Dashboard USER:", user);
-
     fetchElders();
+    fetchNotifications();
   }, [authLoading, token]);
+
+
+  // -----------------------------------
+  // Load elders
+  // -----------------------------------
 
   const fetchElders = async () => {
     try {
       setLoadingElders(true);
-
-      console.log("Sending token to getMyElders:", token);
 
       const res = await getMyElders(token);
 
@@ -101,9 +127,89 @@ export default function FamilyDashboard() {
     }
   };
 
+
+  // -----------------------------------
+  // Load notifications
+  // -----------------------------------
+
+  const fetchNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+
+      const res = await getMyNotifications(token);
+
+      setNotifications(res.data);
+    } catch (err) {
+      console.error(
+        "getMyNotifications error:",
+        err.response?.data || err
+      );
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+
+  // -----------------------------------
+  // Notification polling
+  //
+  // This checks periodically for a new
+  // emergency notification.
+  // -----------------------------------
+
+  useEffect(() => {
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [token]);
+
+
+  // -----------------------------------
+  // Count unread notifications
+  // -----------------------------------
+
+  const unreadCount = notifications.filter(
+    (notification) => !notification.isRead
+  ).length;
+
+
+  // -----------------------------------
+  // Mark notification as read
+  // -----------------------------------
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.isRead) {
+        await markNotificationAsRead(
+          notification._id,
+          token
+        );
+
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item._id === notification._id
+              ? { ...item, isRead: true }
+              : item
+          )
+        );
+      }
+    } catch (err) {
+      console.error(
+        "markNotificationAsRead error:",
+        err.response?.data || err
+      );
+    }
+  };
+
+
   // -----------------------------------
   // Connect to elder
   // -----------------------------------
+
   const handleConnect = async (e) => {
     e.preventDefault();
 
@@ -125,8 +231,6 @@ export default function FamilyDashboard() {
     try {
       setConnecting(true);
 
-      console.log("Connecting with token:", token);
-
       await connectToElder(
         form.elderId.trim(),
         form.relation,
@@ -143,6 +247,7 @@ export default function FamilyDashboard() {
       });
 
       await fetchElders();
+
     } catch (err) {
       console.error(
         "connectToElder error:",
@@ -158,9 +263,11 @@ export default function FamilyDashboard() {
     }
   };
 
+
   // -----------------------------------
-  // Get relation
+  // Get family member's relation
   // -----------------------------------
+
   const myRelation = (elder) => {
     const member = elder.familyMembers?.find(
       (m) =>
@@ -171,9 +278,11 @@ export default function FamilyDashboard() {
     return member?.relation;
   };
 
+
   // -----------------------------------
   // Auth loading
   // -----------------------------------
+
   if (authLoading) {
     return (
       <main className="flex-1 px-8 py-8 lg:px-12">
@@ -186,9 +295,11 @@ export default function FamilyDashboard() {
     );
   }
 
+
   // -----------------------------------
   // Not authenticated
   // -----------------------------------
+
   if (!token) {
     return (
       <main className="flex-1 px-8 py-8 lg:px-12">
@@ -205,12 +316,19 @@ export default function FamilyDashboard() {
     );
   }
 
+
+  // -----------------------------------
+  // Main dashboard
+  // -----------------------------------
+
   return (
     <div className="flex min-h-screen">
+
       <main className="flex-1 px-8 py-8 lg:px-12">
 
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
           <div>
             <h1 className="font-display text-2xl font-semibold text-ink">
               Your elders
@@ -227,29 +345,202 @@ export default function FamilyDashboard() {
             </p>
           </div>
 
-          <Button
-            icon={Plus}
-            size="md"
-            fullWidth={false}
-            onClick={() => setShowConnect(true)}
-          >
-            Connect to an Elder
-          </Button>
+
+          <div className="flex items-center gap-3">
+
+            {/* Notification button */}
+            <div className="relative">
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowNotifications((prev) => !prev)
+                }
+                className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-paper-card text-ink-soft transition hover:border-primary hover:text-primary"
+              >
+                <Bell size={18} />
+
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+
+              {/* Notification dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 z-40 mt-2 w-80 overflow-hidden rounded-xl border border-border bg-paper-card shadow-xl">
+
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+
+                    <div>
+                      <h3 className="font-display text-sm font-semibold text-ink">
+                        Notifications
+                      </h3>
+
+                      <p className="text-xs text-ink-soft">
+                        {unreadCount > 0
+                          ? `${unreadCount} unread`
+                          : "You're all caught up"}
+                      </p>
+                    </div>
+
+                    <Bell
+                      size={16}
+                      className="text-ink-soft"
+                    />
+
+                  </div>
+
+
+                  <div className="max-h-96 overflow-y-auto">
+
+                    {loadingNotifications ? (
+                      <div className="p-6 text-center">
+                        <p className="text-sm text-ink-soft">
+                          Loading notifications...
+                        </p>
+                      </div>
+                    ) : notifications.length === 0 ? (
+
+                      <div className="p-8 text-center">
+
+                        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Check size={18} />
+                        </div>
+
+                        <p className="text-sm font-medium text-ink">
+                          No notifications
+                        </p>
+
+                        <p className="mt-1 text-xs text-ink-soft">
+                          Emergency alerts and other updates will appear here.
+                        </p>
+
+                      </div>
+
+                    ) : (
+
+                      <div>
+                        {notifications.map((notification) => {
+
+                          const isEmergency =
+                            notification.type === "emergency";
+
+                          return (
+                            <button
+                              key={notification._id}
+                              type="button"
+                              onClick={() =>
+                                handleNotificationClick(
+                                  notification
+                                )
+                              }
+                              className={`w-full border-b border-border px-4 py-3 text-left transition hover:bg-paper ${
+                                !notification.isRead
+                                  ? "bg-primary/5"
+                                  : ""
+                              }`}
+                            >
+
+                              <div className="flex gap-3">
+
+                                <div
+                                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                                    isEmergency
+                                      ? "bg-red-100 text-red-600"
+                                      : "bg-primary/10 text-primary"
+                                  }`}
+                                >
+                                  {isEmergency ? (
+                                    <AlertTriangle size={15} />
+                                  ) : (
+                                    <Bell size={15} />
+                                  )}
+                                </div>
+
+
+                                <div className="min-w-0 flex-1">
+
+                                  <div className="flex items-start justify-between gap-2">
+
+                                    <p className="text-sm font-semibold text-ink">
+                                      {notification.title ||
+                                        "Notification"}
+                                    </p>
+
+                                    {!notification.isRead && (
+                                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                                    )}
+
+                                  </div>
+
+
+                                  <p className="mt-1 text-xs leading-5 text-ink-soft">
+                                    {notification.message}
+                                  </p>
+
+
+                                  {notification.createdAt && (
+                                    <p className="mt-1.5 text-[10px] text-ink-soft">
+                                      {new Date(
+                                        notification.createdAt
+                                      ).toLocaleString()}
+                                    </p>
+                                  )}
+
+                                </div>
+
+                              </div>
+
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                    )}
+
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+
+
+            <Button
+              icon={Plus}
+              size="md"
+              fullWidth={false}
+              onClick={() => setShowConnect(true)}
+            >
+              Connect to an Elder
+            </Button>
+
+          </div>
+
         </div>
 
-        {/* Loading */}
+
+        {/* Elders */}
         {loadingElders ? (
+
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+
             {[...Array(2)].map((_, i) => (
               <div
                 key={i}
                 className="h-40 animate-pulse rounded-xl border border-border bg-paper-card"
               />
             ))}
+
           </div>
+
         ) : elders.length === 0 ? (
 
           /* Empty state */
+
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-paper-card py-20 text-center">
 
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -277,14 +568,17 @@ export default function FamilyDashboard() {
             >
               Connect to an Elder
             </Button>
+
           </div>
 
         ) : (
 
           /* Elder cards */
+
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
 
             {elders.map((elder) => {
+
               const tint = tintFor(elder._id);
 
               const initials = elder.fullName
@@ -312,9 +606,11 @@ export default function FamilyDashboard() {
                     }}
                   />
 
+
                   <div className="p-5">
 
                     {/* Elder info */}
+
                     <div className="flex items-center gap-3">
 
                       <div
@@ -327,11 +623,13 @@ export default function FamilyDashboard() {
                       </div>
 
                       <div>
+
                         <h3 className="font-display text-base font-semibold text-ink">
                           {elder.fullName}
                         </h3>
 
                         <p className="text-xs text-ink-soft">
+
                           {elder.age
                             ? `${elder.age} years`
                             : "Age not set"}
@@ -341,13 +639,19 @@ export default function FamilyDashboard() {
                                 elder
                               )}`
                             : ""}
+
                         </p>
+
                       </div>
+
                     </div>
 
+
                     {/* Caregiver */}
+
                     {elder.caregiver && (
                       <div className="mt-4 flex items-center gap-1.5 rounded-lg bg-paper px-3 py-2 text-xs text-ink-soft">
+
                         <User
                           size={12}
                           strokeWidth={2}
@@ -355,33 +659,48 @@ export default function FamilyDashboard() {
 
                         Caregiver:{" "}
                         {elder.caregiver.name}
+
                       </div>
                     )}
 
+
                     {/* Profile button */}
+
                     <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+
                       <span className="flex items-center gap-1 text-xs font-semibold text-primary">
+
                         View profile
 
                         <ChevronRight
                           size={14}
                           strokeWidth={2.5}
                         />
+
                       </span>
+
                     </div>
 
                   </div>
+
                 </div>
               );
             })}
 
           </div>
+
         )}
+
 
       </main>
 
-      {/* Connect modal */}
+
+      {/* -----------------------------------
+          Connect modal
+      ----------------------------------- */}
+
       {showConnect && (
+
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 backdrop-blur-sm">
 
           <div className="w-full max-w-sm rounded-xl border border-border bg-paper-card p-6 shadow-lg">
@@ -406,6 +725,7 @@ export default function FamilyDashboard() {
 
             </div>
 
+
             <form
               onSubmit={handleConnect}
               className="space-y-4"
@@ -427,6 +747,7 @@ export default function FamilyDashboard() {
                 placeholder="e.g. ELD-123456"
               />
 
+
               <InputField
                 size="md"
                 label="Your Relation"
@@ -443,6 +764,7 @@ export default function FamilyDashboard() {
                 }
               />
 
+
               <div className="flex justify-end pt-1">
 
                 <Button
@@ -457,9 +779,13 @@ export default function FamilyDashboard() {
               </div>
 
             </form>
+
           </div>
+
         </div>
+
       )}
+
     </div>
   );
 }

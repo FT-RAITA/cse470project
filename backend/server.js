@@ -8,6 +8,8 @@ import mealScheduleRoutes from "./routes/mealScheduleRoutes.js";
 import moodCheckinRoutes from "./routes/moodCheckinRoutes.js";
 import familyRoutes from "./routes/familyRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
+import emergencyRoutes from "./routes/emergencyRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import { connectDB } from "./config/db.js";
 
 dotenv.config();
@@ -28,6 +30,9 @@ app.use("/api", mealScheduleRoutes);
 app.use("/api", moodCheckinRoutes);
 app.use("/api/family", familyRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/emergency", emergencyRoutes);
+app.use("/api/notifications", notificationRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");

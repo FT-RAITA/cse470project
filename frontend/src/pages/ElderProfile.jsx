@@ -11,6 +11,7 @@ import MealScheduleSection from "../components/MealScheduleSection";
 import MoodCheckinModal from "../components/MoodCheckinModal";
 import { useAuth } from "../context/AuthContext";
 import { getElderById, deleteElder as deleteElderApi } from "../services/elderService";
+import EmergencySOS from "../components/EmergencySOS";
 
 function formatDate(d) {
   if (!d) return "Not set";
@@ -134,6 +135,8 @@ export default function ElderProfile() {
             </div>
 
             <div className="flex gap-2.5">
+              <EmergencySOS elder={elder} />
+              
               <Button
                 variant="accent"
                 icon={Smile}
