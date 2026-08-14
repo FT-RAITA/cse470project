@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake, Smile, Copy, Check } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake, Smile, Copy, Check, FolderHeart, Pill } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Button from "../components/Button";
 import MedicalHistoryCard from "../components/MedicalHistoryCard";
@@ -134,8 +134,28 @@ export default function ElderProfile() {
               </div>
             </div>
 
-            <div className="flex gap-2.5">
+            <div className="flex flex-wrap gap-2.5">
               <EmergencySOS elder={elder} />
+
+              <Button
+                variant="primary"
+                icon={Pill}
+                size="md"
+                fullWidth={false}
+                onClick={() => navigate(`/elders/${id}/medications`)}
+              >
+                Medications
+              </Button>
+
+              <Button
+                variant="secondary"
+                icon={FolderHeart}
+                size="md"
+                fullWidth={false}
+                onClick={() => navigate(`/elders/${id}/records`)}
+              >
+                Records Portal
+              </Button>
               
               <Button
                 variant="accent"

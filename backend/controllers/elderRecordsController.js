@@ -94,7 +94,6 @@ const buildConditionDistribution = (elder, records) => {
     .map(([name, value]) => ({ name, value }));
 };
 
-// GET dashboard summary + analytics
 export const getRecordsDashboard = async (req, res) => {
   try {
     const { id } = req.params;
@@ -180,7 +179,6 @@ export const getRecordsDashboard = async (req, res) => {
   }
 };
 
-// GET records with search / filter / sort / pagination
 export const getMedicalRecords = async (req, res) => {
   try {
     const { id } = req.params;
@@ -280,7 +278,6 @@ export const createMedicalRecord = async (req, res) => {
       recordedAt: recordedAt ? new Date(recordedAt) : new Date(),
     });
 
-    // Keep elder profile allergies/chronic in sync lightly (does not replace profile module)
     if (category === "Allergy" && title.trim()) {
       const set = new Set([...(elder.allergies || []), title.trim()]);
       elder.allergies = [...set];

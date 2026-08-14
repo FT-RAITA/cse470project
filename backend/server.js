@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/authRoutes.js";
 import elderRoutes from "./routes/elderRoutes.js";
@@ -10,7 +12,12 @@ import familyRoutes from "./routes/familyRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import emergencyRoutes from "./routes/emergencyRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import elderRecordsRoutes from "./routes/elderRecordsRoutes.js";
+import medicationManagementRoutes from "./routes/medicationManagementRoutes.js";
 import { connectDB } from "./config/db.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -22,6 +29,7 @@ connectDB();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -32,7 +40,8 @@ app.use("/api/family", familyRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use("/api/notifications", notificationRoutes);
-
+app.use("/api", elderRecordsRoutes);
+app.use("/api", medicationManagementRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");
@@ -41,7 +50,3 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
-
-// kKXXDAZnVHCm9HE5
-//mongodb+srv://raitaluna_db_user:kKXXDAZnVHCm9HE5@cluster0.rkpnlbs.mongodb.net/?appName=Cluster0

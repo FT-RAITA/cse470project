@@ -161,11 +161,6 @@ export default function Appointments() {
             <h1 className="font-display text-2xl font-semibold text-ink">
               {isCaregiver ? "Appointment approval" : "My visit requests"}
             </h1>
-            <p className="mt-1 text-sm text-ink-soft">
-              {isCaregiver
-                ? "Review, approve, and manage visitor appointments."
-                : "Track the status of your visit requests."}
-            </p>
           </div>
           <Button
             icon={CalendarPlus}
