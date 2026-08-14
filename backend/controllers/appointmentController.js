@@ -33,7 +33,6 @@ const isPastDate = (date) => {
   return startOfDay(date) < today;
 };
 
-// Combine a "YYYY-MM-DD" date and "HH:mm" time (must be one of TIME_SLOTS) into a Date
 const combineDateAndTime = (date, time) => {
   const [hours, minutes] = time.split(":").map(Number);
   const combined = new Date(date);
@@ -111,7 +110,6 @@ const withCountdown = (appointment) => {
   return obj;
 };
 
-// Elders available for booking dropdown (id + name only)
 export const getBookableElders = async (req, res) => {
   try {
     let elders;
@@ -121,7 +119,6 @@ export const getBookableElders = async (req, res) => {
         .select("fullName age gender")
         .sort({ fullName: 1 });
     } else {
-      // Family members can only book for elders they're connected to
       elders = await Elder.find({ "familyMembers.user": req.user.id })
         .select("fullName age gender")
         .sort({ fullName: 1 });
@@ -133,7 +130,6 @@ export const getBookableElders = async (req, res) => {
   }
 };
 
-// Available time slots for an elder on a date
 export const getAvailableSlots = async (req, res) => {
   try {
     const { elderId, date } = req.query;
@@ -176,7 +172,6 @@ export const getAvailableSlots = async (req, res) => {
   }
 };
 
-// Create appointment (family member or caregiver on behalf)
 export const createAppointment = async (req, res) => {
   try {
     const errors = validateCreateInput(req.body);
@@ -189,13 +184,11 @@ export const createAppointment = async (req, res) => {
       return res.status(404).json({ message: "Elder not found." });
     }
 
-    // Caregivers may only book for their own elders
     if (req.user.role === "caregiver") {
       if (elder.caregiver.toString() !== req.user.id) {
         return res.status(403).json({ message: "You can only book visits for your elders." });
       }
     } else {
-      // Family members may only book for elders they're connected to
       const connected = elder.familyMembers.some(
         (m) => m.user.toString() === req.user.id
       );
@@ -213,7 +206,6 @@ export const createAppointment = async (req, res) => {
       });
     }
 
-    // Prevent exact duplicate pending request by same visitor
     const duplicate = await Appointment.findOne({
       visitor: req.user.id,
       elder: req.body.elder,
@@ -250,7 +242,6 @@ export const createAppointment = async (req, res) => {
   }
 };
 
-// List appointments (role-scoped) with optional filters
 export const getAppointments = async (req, res) => {
   try {
     const { status, search, filter } = req.query;
@@ -400,7 +391,6 @@ export const updateAppointmentStatus = async (req, res) => {
         return res.status(403).json({ message: "Access denied." });
       }
     } else if (isOwnerVisitor) {
-      // Family members may only cancel their own pending requests
       if (status !== "Cancelled" || appointment.status !== "Pending") {
         return res.status(403).json({
           message: "You can only cancel your own pending requests.",
@@ -410,7 +400,6 @@ export const updateAppointmentStatus = async (req, res) => {
       return res.status(403).json({ message: "Access denied." });
     }
 
-    // Conflict check when approving
     if (status === "Approved") {
       const conflict = await findSlotConflict({
         elder: appointment.elder._id,
@@ -461,7 +450,6 @@ export const updateAppointmentStatus = async (req, res) => {
   }
 };
 
-// Caregiver edit of appointment details
 export const updateAppointment = async (req, res) => {
   try {
     if (req.user.role !== "caregiver") {
@@ -503,7 +491,6 @@ export const updateAppointment = async (req, res) => {
       appointment.elder = req.body.elder;
     }
 
-    // Rescheduling requires both date and time together
     if (req.body.date || req.body.time) {
       if (!req.body.date || !req.body.time) {
         return res.status(400).json({

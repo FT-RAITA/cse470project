@@ -78,9 +78,6 @@ export default function ElderRecordsPortal() {
             <h1 className="font-display text-3xl font-semibold text-ink">
               {elderName}
             </h1>
-            <p className="mt-1 text-sm text-ink-soft">
-              Monitor medical records, medications, reports, and health trends.
-            </p>
           </div>
           {!loading && dashboard && (
             <HealthStatusBadge status={dashboard.summary.healthStatus} />

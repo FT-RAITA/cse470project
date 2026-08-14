@@ -8,6 +8,7 @@ import CaregiverDashboard from "../pages/CaregiverDashboard";
 import Appointments from "../pages/Appointments";
 import BookAppointment from "../pages/BookAppointment";
 import ElderRecordsPortal from "../pages/ElderRecordsPortal";
+import MedicationDashboard from "../pages/MedicationDashboard";
 import FamilyDashboard from "../pages/FamilyDashboard";
 import FamilyElderView from "../pages/FamilyElderView";
 
@@ -24,6 +25,7 @@ export default function AppRoutes() {
       <Route path="/elders/:id" element={<ElderProfile />} />
       <Route path="/elders/:id/edit" element={<EditElder />} />
       <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
+      <Route path="/elders/:id/medications" element={<MedicationDashboard />} />
 
       {/* Family member */}
       <Route path="/family/dashboard" element={<FamilyDashboard />} />

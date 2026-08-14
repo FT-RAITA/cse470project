@@ -6,7 +6,6 @@ const STATUS_STYLES = {
   Cancelled: "bg-paper text-ink-soft border border-border",
 };
 
-// Must match backend/controllers/appointmentController.js TIME_SLOTS exactly
 export const TIME_SLOTS = [
   "09:00",
   "10:00",
@@ -19,7 +18,6 @@ export const TIME_SLOTS = [
   "17:00",
 ];
 
-// value = durationMinutes sent to the backend, label = what the user sees
 export const DURATION_OPTIONS = [
   { value: 30, label: "30 minutes" },
   { value: 60, label: "1 hour" },
@@ -116,7 +114,6 @@ export function VisitTimeline({ status }) {
   );
 }
 
-// Date portion of an appointmentDateTime
 export function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", {
@@ -126,14 +123,12 @@ export function formatDate(d) {
   });
 }
 
-// Time portion of an appointmentDateTime, 24h "HH:mm" to match TIME_SLOTS
 export function formatTime(d) {
   if (!d) return "—";
   const dt = new Date(d);
   return `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
 }
 
-// For prefilling a type="date" input from a stored appointmentDateTime
 export function formatDateInput(d) {
   if (!d) return "";
   return new Date(d).toISOString().slice(0, 10);
