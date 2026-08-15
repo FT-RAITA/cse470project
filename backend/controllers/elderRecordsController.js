@@ -7,6 +7,7 @@ import Medication from "../models/medication.js";
 import MedicalReport from "../models/medicalReport.js";
 import HealthActivity from "../models/healthActivity.js";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export const UPLOADS_DIR = path.join(__dirname, "../uploads/medical-reports");

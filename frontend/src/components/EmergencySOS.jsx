@@ -6,7 +6,7 @@ import Button from "./Button";
 import { useAuth } from "../context/AuthContext";
 import { createEmergency } from "../services/emergencyService";
 
-export default function EmergencySOS({ elder }) {
+export default function EmergencySOS({ elder,  size = "lg", fullWidth = true }) {
   const { token } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -119,6 +119,8 @@ export default function EmergencySOS({ elder }) {
         icon={AlertTriangle}
         onClick={handleEmergency}
         loading={loading}
+        size={size}
+        fullWidth={fullWidth}
       >
         Emergency SOS
       </Button>

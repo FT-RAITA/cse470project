@@ -135,7 +135,7 @@ export default function ElderProfile() {
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-              <EmergencySOS elder={elder} />
+              <EmergencySOS elder={elder} size="md" fullWidth={false} />
 
               <Button
                 variant="primary"
