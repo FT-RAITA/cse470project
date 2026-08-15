@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutGrid, UserPlus, LogOut, HeartHandshake, CalendarDays } from "lucide-react";
+import { LayoutGrid, UserPlus, LogOut, HeartHandshake, CalendarDays, Dumbbell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar() {
@@ -14,7 +14,10 @@ export default function Sidebar() {
       icon: LayoutGrid,
     },
     ...(isCaregiver
-      ? [{ to: "/elders/add", label: "Add Elder", icon: UserPlus }]
+      ? [
+          { to: "/elders/add", label: "Add Elder", icon: UserPlus },
+          { to: "/activities", label: "Activities", icon: Dumbbell },
+        ]
       : []),
     { to: "/appointments", label: "Appointments", icon: CalendarDays },
   ];

@@ -14,6 +14,7 @@ import emergencyRoutes from "./routes/emergencyRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import elderRecordsRoutes from "./routes/elderRecordsRoutes.js";
 import medicationManagementRoutes from "./routes/medicationManagementRoutes.js";
+import activityRoutes from "./routes/activityRoutes.js";
 import { connectDB } from "./config/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,7 @@ app.use("/api/emergency", emergencyRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api", elderRecordsRoutes);
 app.use("/api", medicationManagementRoutes);
+app.use("/api", activityRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");

@@ -11,6 +11,7 @@ import ElderRecordsPortal from "../pages/ElderRecordsPortal";
 import MedicationDashboard from "../pages/MedicationDashboard";
 import FamilyDashboard from "../pages/FamilyDashboard";
 import FamilyElderView from "../pages/FamilyElderView";
+import ActivityDashboard from "../pages/ActivityDashboard";
 
 export default function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ export default function AppRoutes() {
       <Route path="/elders/:id/edit" element={<EditElder />} />
       <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
       <Route path="/elders/:id/medications" element={<MedicationDashboard />} />
+      <Route path="/activities" element={<ActivityDashboard />} />
 
       {/* Family member */}
       <Route path="/family/dashboard" element={<FamilyDashboard />} />
