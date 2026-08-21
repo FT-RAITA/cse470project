@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutGrid, UserPlus, LogOut, HeartHandshake, CalendarDays, Dumbbell, Stethoscope } from "lucide-react";
+import { LayoutGrid, UserPlus, LogOut, HeartHandshake, CalendarDays, Dumbbell, Stethoscope,ListChecks, } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar() {
@@ -18,6 +18,7 @@ export default function Sidebar() {
           { to: "/elders/add", label: "Add Elder", icon: UserPlus },
           { to: "/activities", label: "Activities", icon: Dumbbell },
           { to: "/doctor-appointments", label: "Doctor's Appointment", icon: Stethoscope },
+          {to: "/tasks", label: "Care Tasks", icon: ListChecks,}
         ]
       : []),
     { to: "/appointments", label: "Appointments", icon: CalendarDays },

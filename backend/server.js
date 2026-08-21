@@ -16,6 +16,7 @@ import elderRecordsRoutes from "./routes/elderRecordsRoutes.js";
 import medicationManagementRoutes from "./routes/medicationManagementRoutes.js";
 import doctorAppointmentRoutes from "./routes/doctorAppointmentRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 import { connectDB } from "./config/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,7 +46,9 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api", elderRecordsRoutes);
 app.use("/api", medicationManagementRoutes);
 app.use("/api", activityRoutes);
+app.use("/api", taskRoutes);
 app.use("/api", doctorAppointmentRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");
