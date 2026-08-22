@@ -18,6 +18,8 @@ import medicationManagementRoutes from "./routes/medicationManagementRoutes.js";
 import doctorAppointmentRoutes from "./routes/doctorAppointmentRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
+import caregiverScheduleRoutes from "./routes/caregiverScheduleRoutes.js";
+import { startCaregiverScheduleScheduler } from "./services/caregiverScheduleService.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import { connectDB } from "./config/db.js";
 import {Server} from "socket.io";
@@ -32,7 +34,7 @@ const app = express();
 const server = http.createServer(app);
 const PORT = 5001;
 
-connectDB();
+await connectDB();
 
 // Middleware
 app.use(cors());
@@ -55,11 +57,16 @@ app.use("/api", elderRecordsRoutes);
 app.use("/api", medicationManagementRoutes);
 app.use("/api", activityRoutes);
 app.use("/api", taskRoutes);
+app.use("/api/caregiver-schedule", caregiverScheduleRoutes);
 app.use("/api", doctorAppointmentRoutes);
 
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", database: "connected" });
 });
 
 const io = new Server(server, {
@@ -72,6 +79,7 @@ const io = new Server(server, {
 app.set("io", io);
 
 initializeSocket(io);
+startCaregiverScheduleScheduler();
 
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

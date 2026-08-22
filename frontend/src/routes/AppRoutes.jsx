@@ -14,6 +14,7 @@ import FamilyElderView from "../pages/FamilyElderView";
 import ActivityDashboard from "../pages/ActivityDashboard";
 import DoctorAppointments from "../pages/DoctorAppointments";
 import Tasks from "../pages/Tasks";
+import CaregiverSchedule from "../pages/CaregiverSchedule";
 import ChatPage from "../pages/ChatPage";
 import { useAuth } from "../context/AuthContext";
 
@@ -34,6 +35,7 @@ export default function AppRoutes() {
       <Route path="/activities" element={<ActivityDashboard />} />
       <Route path="/doctor-appointments" element={<DoctorAppointments />} />
       <Route path="/tasks" element={<Tasks />} />
+      <Route path="/schedule" element={<CaregiverSchedule />} />
       <Route path="/elders/:id/chat" element={<ChatPage />} />
 
       {/* Family member */}
