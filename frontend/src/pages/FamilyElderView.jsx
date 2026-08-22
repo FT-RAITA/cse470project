@@ -11,6 +11,7 @@ import {
   CalendarPlus,
   User,
   Mail,
+  MessageCircle,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Button from "../components/Button";
@@ -19,6 +20,7 @@ import EmergencyContactCard from "../components/EmergencyContactCard";
 import NutritionPlanCard from "../components/NutritionPlanCard";
 import MealScheduleSection from "../components/MealScheduleSection";
 import MoodCheckinModal from "../components/MoodCheckinModal";
+import Chat from "../components/Chat";
 import { useAuth } from "../context/AuthContext";
 import { getElderById } from "../services/elderService";
 
@@ -146,10 +148,27 @@ export default function FamilyElderView() {
                 Caregiver
               </h3>
             </div>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <InfoStat label="Name" value={elder.caregiver.name} />
               <InfoStat icon={Mail} label="Email" value={elder.caregiver.email} mono />
-              <InfoStat icon={Phone} label="Phone" value={elder.caregiver.phone || "Not set"} mono />
+              <InfoStat
+                icon={Phone}
+                label="Phone"
+                value={elder.caregiver.phone || "Not set"}
+                mono
+              />
+            </div>
+
+            {/* Communication */}
+            <div className="mt-5 border-t border-border pt-5">
+              <Link
+                to={`/family/elders/${id}/chat`}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-paper-card transition-opacity hover:opacity-90"
+              >
+                <MessageCircle size={17} strokeWidth={2} />
+                Message Caregiver
+              </Link>
             </div>
           </div>
         )}

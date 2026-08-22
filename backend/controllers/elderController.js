@@ -56,7 +56,9 @@ export const getElderById = async (req, res) => {
         { caregiver: req.user.id },
         { "familyMembers.user": req.user.id },
       ],
-    }).populate('caregiver', 'name email phone');
+    })
+      .populate('caregiver', 'name email phone')
+      .populate('familyMembers.user', 'name email phone');
     if (!elder) {
       return res.status(404).json({ message: 'Elder not found' });
     }
@@ -69,9 +71,15 @@ export const getElderById = async (req, res) => {
 // Caregiver's own elder list (family members use /api/family/my-elders instead)
 export const getAllElders = async (req, res) => {
   try {
-    const elders = await Elder.find({ caregiver: req.user.id }).sort({ createdAt: -1 });
+    const elders = await Elder.find({ caregiver: req.user.id })
+    .populate('familyMembers.user', 'name email phone')
+    .sort({ createdAt: -1 });
     res.json(elders);
   } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+    console.error('GET ALL ELDERS ERROR:', error);
+
+    res.status(500).json({ message: error.message });
+ 
+}
+
 };

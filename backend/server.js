@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import http from "http";
 import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -17,7 +18,10 @@ import medicationManagementRoutes from "./routes/medicationManagementRoutes.js";
 import doctorAppointmentRoutes from "./routes/doctorAppointmentRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 import { connectDB } from "./config/db.js";
+import {Server} from "socket.io";
+import {initializeSocket} from "./socket/socket.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +29,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = 5001;
 
 connectDB();
@@ -36,13 +41,16 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api", elderRoutes);
-app.use("/api", mealScheduleRoutes);
-app.use("/api", moodCheckinRoutes);
 app.use("/api/family", familyRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/messages", messageRoutes);
+
+
+app.use("/api", elderRoutes);
+app.use("/api", mealScheduleRoutes);
+app.use("/api", moodCheckinRoutes);
 app.use("/api", elderRecordsRoutes);
 app.use("/api", medicationManagementRoutes);
 app.use("/api", activityRoutes);
@@ -54,6 +62,17 @@ app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
 
-app.listen(PORT, () => {
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  }
+});
+
+app.set("io", io);
+
+initializeSocket(io);
+
+server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

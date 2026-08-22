@@ -12,6 +12,9 @@ import MoodCheckinModal from "../components/MoodCheckinModal";
 import { useAuth } from "../context/AuthContext";
 import { getElderById, deleteElder as deleteElderApi } from "../services/elderService";
 import EmergencySOS from "../components/EmergencySOS";
+import Chat from "../components/Chat";
+
+
 
 function formatDate(d) {
   if (!d) return "Not set";
@@ -24,7 +27,7 @@ function formatDate(d) {
 
 export default function ElderProfile() {
   const { id } = useParams();
-  const { token } = useAuth();
+  const { token, loading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [elder, setElder] = useState(null);
@@ -34,8 +37,15 @@ export default function ElderProfile() {
   const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
     fetchElder();
-  }, [id]);
+  }, [id, authLoading, isAuthenticated]);
 
   const fetchElder = async () => {
     try {
@@ -195,6 +205,11 @@ export default function ElderProfile() {
           </div>
         </div>
 
+        {/*Communication section */}
+        <div className="mt-6">
+          <Chat elder={elder} />
+        </div>
+
         {/* Details grid */}
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <MedicalHistoryCard
@@ -213,6 +228,7 @@ export default function ElderProfile() {
         <div className="mt-6">
           <MealScheduleSection elderId={id} />
         </div>
+
       </main>
 
       {showMoodModal && (
