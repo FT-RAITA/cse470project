@@ -12,14 +12,11 @@ import MedicationDashboard from "../pages/MedicationDashboard";
 import FamilyDashboard from "../pages/FamilyDashboard";
 import FamilyElderView from "../pages/FamilyElderView";
 import ActivityDashboard from "../pages/ActivityDashboard";
-<<<<<<< HEAD
 import DoctorAppointments from "../pages/DoctorAppointments";
 import Tasks from "../pages/Tasks";
-
-=======
 import ChatPage from "../pages/ChatPage";
 import { useAuth } from "../context/AuthContext";
->>>>>>> 4947a84 (Communication portal is complete)
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -35,13 +32,10 @@ export default function AppRoutes() {
       <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
       <Route path="/elders/:id/medications" element={<MedicationDashboard />} />
       <Route path="/activities" element={<ActivityDashboard />} />
-<<<<<<< HEAD
       <Route path="/doctor-appointments" element={<DoctorAppointments />} />
       <Route path="/tasks" element={<Tasks />} />
-
-=======
       <Route path="/elders/:id/chat" element={<ChatPage />} />
->>>>>>> 4947a84 (Communication portal is complete)
+
       {/* Family member */}
       <Route path="/family/dashboard" element={<FamilyDashboard />} />
       <Route path="/family/elders/:id" element={<FamilyElderView />} />
@@ -51,6 +45,5 @@ export default function AppRoutes() {
       <Route path="/appointments" element={<Appointments />} />
       <Route path="/appointments/book" element={<BookAppointment />} />
     </Routes>
-
   );
 }
