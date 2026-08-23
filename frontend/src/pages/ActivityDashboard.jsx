@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Dumbbell, Clock3, CalendarDays, Check, Trash2, X } from "lucide-react";
+import { Plus, Dumbbell, Clock3, CalendarDays, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import Button from "../components/Button";
@@ -8,7 +8,6 @@ import { getAllElders } from "../services/elderService";
 import {
   getActivities,
   createActivity,
-  completeActivity,
   deleteActivity,
 } from "../services/activityService";
 
@@ -114,24 +113,6 @@ export default function ActivityDashboard() {
     }
   };
 
-  const handleComplete = async (activityId) => {
-    try {
-      setWorkingId(activityId);
-      const response = await completeActivity(activityId, token);
-      setActivities((current) =>
-        current.map((item) =>
-          item._id === activityId ? response.data : item
-        )
-      );
-      toast.success("Activity marked as completed.");
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Could not complete the activity."
-      );
-    } finally {
-      setWorkingId(null);
-    }
-  };
 
   const handleDelete = async (activityId) => {
     try {
@@ -167,8 +148,9 @@ export default function ActivityDashboard() {
                   Plan activities for your elders
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
-                  Choose an elder, add a simple activity, set its duration and
-                  schedule, then keep track of what has been completed.
+                  Choose an elder, add a simple activity, and set its
+                  duration and schedule. Marking it complete happens from
+                  the Care Tasks queue.
                 </p>
               </div>
 
@@ -259,61 +241,37 @@ export default function ActivityDashboard() {
                           {elderActivities.map((item) => (
                             <article
                               key={item._id}
-                              className={`rounded-xl border p-4 transition-colors ${
-                                item.completed
-                                  ? "border-primary/20 bg-primary/5"
-                                  : "border-border bg-paper-card"
-                              }`}
+                              className="rounded-xl border border-border bg-paper-card p-4"
                             >
                               <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-ink">
-                                      {item.activity}
-                                    </h3>
-                                    {item.completed && (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                                        <Check size={11} /> Done
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-ink-soft sm:grid-cols-2">
-                                    <span className="inline-flex items-center gap-1.5">
-                                      <Clock3 size={13} />
-                                      {item.duration} minute{item.duration === 1 ? "" : "s"}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5">
-                                      <CalendarDays size={13} />
-                                      {formatSchedule(item.schedule)}
-                                    </span>
-                                  </div>
-                                </div>
+                                <p className="min-w-0 text-sm leading-6 text-ink">
+                                  <span className="font-semibold">
+                                    {item.activity}
+                                  </span>{" "}
+                                  is planned for{" "}
+                                  <span className="inline-flex items-center gap-1 font-medium">
+                                    <Clock3 size={13} className="shrink-0" />
+                                    {item.duration} minute
+                                    {item.duration === 1 ? "" : "s"}
+                                  </span>{" "}
+                                  on{" "}
+                                  <span className="inline-flex items-center gap-1 font-medium">
+                                    <CalendarDays size={13} className="shrink-0" />
+                                    {formatSchedule(item.schedule)}
+                                  </span>
+                                  .
+                                </p>
 
                                 <button
                                   type="button"
                                   onClick={() => handleDelete(item._id)}
                                   disabled={workingId === item._id}
-                                  className="rounded-lg p-2 text-ink-soft transition hover:bg-rose-soft hover:text-rose disabled:cursor-not-allowed disabled:opacity-50"
-                                  title="Delete activity"
+                                  className="shrink-0 rounded-lg p-2 text-ink-soft transition hover:bg-rose-soft hover:text-rose disabled:cursor-not-allowed disabled:opacity-50"
+                                  title="Remove from plan"
                                 >
                                   <Trash2 size={16} />
                                 </button>
                               </div>
-
-                              {!item.completed && (
-                                <div className="mt-4 border-t border-border pt-3">
-                                  <Button
-                                    icon={Check}
-                                    size="md"
-                                    fullWidth={false}
-                                    loading={workingId === item._id}
-                                    onClick={() => handleComplete(item._id)}
-                                  >
-                                    Mark Complete
-                                  </Button>
-                                </div>
-                              )}
                             </article>
                           ))}
                         </div>

@@ -1,5 +1,6 @@
 import DoctorAppointment from "../models/DoctorAppointment.js";
 import Elder from "../models/elder.js";
+import { autoCompleteRelatedTask } from "./taskController.js";
 
 const findOwnedElder = (elderId, caregiverId) =>
   Elder.findOne({ _id: elderId, caregiver: caregiverId }).select("_id fullName elderID");
@@ -109,6 +110,9 @@ export const updateDoctorAppointmentStatus = async (req, res) => {
 
     appointment.status = status;
     await appointment.save();
+     if (status === "Completed") {
+      await autoCompleteRelatedTask("DoctorAppointment", appointment._id);
+    }
 
     const populated = await populateAppointment(
       DoctorAppointment.findById(appointment._id)

@@ -1,0 +1,131 @@
+export const SEED_TEAM = [
+  {
+    seedKey: "seed-raita",
+    name: "Raita",
+    tasksAssigned: 42,
+    tasksCompleted: 40,
+    tasksMissed: 2,
+    tasksPending: 0,
+    tasksCancelled: 0,
+    onTimeCompleted: 38,
+    shiftsScheduled: 24,
+    shiftsCompleted: 24,
+    shiftsMissed: 0,
+    shiftsLate: 0,
+  },
+  {
+    seedKey: "seed-aritra",
+    name: "Aritra",
+    tasksAssigned: 40,
+    tasksCompleted: 36,
+    tasksMissed: 3,
+    tasksPending: 1,
+    tasksCancelled: 0,
+    onTimeCompleted: 34,
+    shiftsScheduled: 22,
+    shiftsCompleted: 21,
+    shiftsMissed: 1,
+    shiftsLate: 1,
+  },
+  {
+    seedKey: "seed-mumtahina",
+    name: "Mumtahina",
+    tasksAssigned: 38,
+    tasksCompleted: 33,
+    tasksMissed: 4,
+    tasksPending: 1,
+    tasksCancelled: 0,
+    onTimeCompleted: 30,
+    shiftsScheduled: 20,
+    shiftsCompleted: 19,
+    shiftsMissed: 1,
+    shiftsLate: 2,
+  },
+  {
+    seedKey: "seed-soumo",
+    name: "Soumo",
+    tasksAssigned: 35,
+    tasksCompleted: 30,
+    tasksMissed: 4,
+    tasksPending: 1,
+    tasksCancelled: 0,
+    onTimeCompleted: 27,
+    shiftsScheduled: 18,
+    shiftsCompleted: 16,
+    shiftsMissed: 2,
+    shiftsLate: 1,
+  },
+];
+
+export const SEED_ACTIVITIES = {
+  "seed-raita": [
+    { time: "09:00", title: "Medication task completed", elder: "Hinata Uzumaki", status: "Completed", category: "Medication" },
+    { time: "10:30", title: "Elder wellbeing check completed", elder: "Hinata Uzumaki", status: "Completed", category: "Mood" },
+    { time: "12:00", title: "Meal assistance completed", elder: "Naruto Uzumaki", status: "Completed", category: "Meal" },
+    { time: "14:00", title: "Doctor appointment assistance", elder: "Naruto Uzumaki", status: "Completed", category: "Appointment" },
+    { time: "16:30", title: "Exercise activity completed", elder: "Hinata Uzumaki", status: "Completed", category: "Exercise" },
+  ],
+  "seed-aritra": [
+    { time: "08:30", title: "Morning medication check", elder: "Hinata Uzumaki", status: "Completed", category: "Medication" },
+    { time: "11:00", title: "Mobility support session", elder: "Hinata Uzumaki", status: "Completed", category: "Exercise" },
+    { time: "13:15", title: "Lunch assistance", elder: "Hinata Uzumaki", status: "Missed", category: "Meal" },
+    { time: "15:00", title: "Family visit coordination", elder: "Hinata Uzumaki", status: "Completed", category: "Appointment" },
+    { time: "17:45", title: "Evening wellbeing check", elder: "Hinata Uzumaki", status: "Pending", category: "Mood" },
+  ],
+  "seed-mumtahina": [
+    { time: "09:15", title: "Medication reminder follow-up", elder: "Sakura Haruno", status: "Completed", category: "Medication" },
+    { time: "11:30", title: "Exercise planner session", elder: "Sakura Haruno", status: "Completed", category: "Exercise" },
+    { time: "13:00", title: "Meal schedule update", elder: "Sakura Haruno", status: "Completed", category: "Meal" },
+    { time: "16:00", title: "Doctor appointment prep", elder: "Sakura Haruno", status: "Missed", category: "Appointment" },
+  ],
+  "seed-soumo": [
+    { time: "10:00", title: "Care task review", elder: "Kakashi Hatake", status: "Completed", category: "General" },
+    { time: "12:30", title: "Lunch support", elder: "Kakashi Hatake", status: "Completed", category: "Meal" },
+    { time: "15:30", title: "Medication inventory check", elder: "Kakashi Hatake", status: "Pending", category: "Medication" },
+    { time: "18:00", title: "Shift wrap-up notes", elder: "Kakashi Hatake", status: "Cancelled", category: "General" },
+  ],
+};
+
+export const SEED_TREND = {
+  "seed-raita": [
+    { label: "Mon", completed: 6, missed: 0, score: 96 },
+    { label: "Tue", completed: 7, missed: 0, score: 97 },
+    { label: "Wed", completed: 5, missed: 1, score: 93 },
+    { label: "Thu", completed: 6, missed: 0, score: 95 },
+    { label: "Fri", completed: 8, missed: 0, score: 98 },
+    { label: "Sat", completed: 4, missed: 1, score: 92 },
+    { label: "Sun", completed: 4, missed: 0, score: 94 },
+  ],
+  "seed-aritra": [
+    { label: "Mon", completed: 5, missed: 1, score: 88 },
+    { label: "Tue", completed: 6, missed: 0, score: 91 },
+    { label: "Wed", completed: 4, missed: 1, score: 86 },
+    { label: "Thu", completed: 7, missed: 0, score: 93 },
+    { label: "Fri", completed: 5, missed: 1, score: 89 },
+    { label: "Sat", completed: 5, missed: 0, score: 90 },
+    { label: "Sun", completed: 4, missed: 0, score: 92 },
+  ],
+  "seed-mumtahina": [
+    { label: "Mon", completed: 4, missed: 1, score: 85 },
+    { label: "Tue", completed: 5, missed: 1, score: 86 },
+    { label: "Wed", completed: 6, missed: 0, score: 90 },
+    { label: "Thu", completed: 4, missed: 1, score: 84 },
+    { label: "Fri", completed: 5, missed: 0, score: 88 },
+    { label: "Sat", completed: 5, missed: 1, score: 87 },
+    { label: "Sun", completed: 4, missed: 0, score: 89 },
+  ],
+  "seed-soumo": [
+    { label: "Mon", completed: 3, missed: 1, score: 82 },
+    { label: "Tue", completed: 4, missed: 1, score: 83 },
+    { label: "Wed", completed: 5, missed: 0, score: 88 },
+    { label: "Thu", completed: 4, missed: 1, score: 84 },
+    { label: "Fri", completed: 5, missed: 1, score: 85 },
+    { label: "Sat", completed: 4, missed: 0, score: 87 },
+    { label: "Sun", completed: 5, missed: 0, score: 86 },
+  ],
+};
+
+export const findSeedByName = (name = "") =>
+  SEED_TEAM.find((s) => s.name.toLowerCase() === String(name).toLowerCase());
+
+export const findSeedByKey = (key) => SEED_TEAM.find((s) => s.seedKey === key);

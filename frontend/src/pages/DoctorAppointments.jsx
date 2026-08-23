@@ -293,6 +293,9 @@ function Section({ title, items, emptyText, children }) {
 
 function AppointmentCard({ appt, workingId, onComplete, onCancel, onDelete, readOnly = false }) {
   const isWorking = workingId === appt._id;
+  const displayStatus =
+    readOnly && appt.status === "Upcoming" ? "Missed" : appt.status;
+
   return (
     <div className="rounded-xl border border-border bg-paper-card p-5">
       <div className="flex items-start justify-between">
@@ -302,14 +305,14 @@ function AppointmentCard({ appt, workingId, onComplete, onCancel, onDelete, read
         </div>
         <span
           className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-            appt.status === "Upcoming"
+            displayStatus === "Upcoming"
               ? "bg-primary/10 text-primary"
-              : appt.status === "Completed"
+              : displayStatus === "Completed"
                 ? "bg-accent-soft text-primary-dark"
                 : "bg-rose-soft text-rose"
           }`}
         >
-          {appt.status}
+          {displayStatus}
         </span>
       </div>
 
