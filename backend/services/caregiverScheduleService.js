@@ -5,7 +5,7 @@ import CaregiverScheduleSettings from "../models/caregiverScheduleSettings.js";
 
 const SLOT_HOURS = 4;
 const SLOT_COUNT = 6;
-const REQUIRED_CAREGIVERS = 3;
+const REQUIRED_CAREGIVERS = 6; // one caregiver per 4-hour slot
 const DEFAULT_UTC_OFFSET_MINUTES = 360; // Asia/Dhaka; override with SCHEDULE_UTC_OFFSET_MINUTES if needed.
 
 const getOffsetMinutes = () => {
@@ -86,7 +86,7 @@ export const assignCaregiversToSlots = (slots, caregiverIds, dateKey) => {
   const selected = rotated.slice(0, Math.min(REQUIRED_CAREGIVERS, rotated.length));
 
   return slots.map((slot, index) => {
-    const caregiver = selected[Math.floor(index / 2)] || null;
+    const caregiver = rotated[index] || null;
     return {
       ...slot,
       initialCaregiver: caregiver,
@@ -94,49 +94,6 @@ export const assignCaregiversToSlots = (slots, caregiverIds, dateKey) => {
       switchCount: 0,
     };
   });
-};
-
-const serializeId = (value) => (value ? String(value) : null);
-
-export const validateSwap = ({ schedule, actorId, fromSlotIndex, toSlotIndex }) => {
-  if (!schedule) return { ok: false, message: "Schedule not found." };
-  if (schedule.scheduleDate <= new Date()) {
-    return { ok: false, message: "This schedule is no longer open for switching." };
-  }
-  if (fromSlotIndex === toSlotIndex) {
-    return { ok: false, message: "Choose a different slot." };
-  }
-
-  const fromSlot = schedule.slots[fromSlotIndex];
-  const toSlot = schedule.slots[toSlotIndex];
-  if (!fromSlot || !toSlot) return { ok: false, message: "Invalid slot." };
-  if (serializeId(fromSlot.caregiver) !== String(actorId)) {
-    return { ok: false, message: "You can only move one of your own assigned slots." };
-  }
-
-  const actorSlots = schedule.slots.filter(
-    (slot) => serializeId(slot.caregiver) === String(actorId)
-  ).length;
-  if (actorSlots !== 2) {
-    return { ok: false, message: "Schedule integrity check failed: a caregiver must have exactly two slots." };
-  }
-
-  // A caregiver gets exactly one switch opportunity per daily schedule.
-  // The rule is intentionally tied to the schedule itself, so it survives page refreshes and retries.
-  const alreadySwitched = (schedule.switchHistory || []).some(
-    (entry) => serializeId(entry.actorCaregiver) === String(actorId)
-  );
-  if (alreadySwitched) {
-    return { ok: false, message: "You have already used your one schedule switch for this day." };
-  }
-
-  // Switches can only move a caregiver's own assigned slot into a currently unassigned slot.
-  // Another caregiver's slot can never be taken or exchanged.
-  if (toSlot.caregiver) {
-    return { ok: false, message: "You can only switch into an unassigned available slot." };
-  }
-
-  return { ok: true, fromSlot, toSlot };
 };
 
 const getEligibleCaregivers = async () => {
@@ -216,79 +173,6 @@ export const getScheduleForDate = async (dateKey) => {
     .populate("slots.initialCaregiver", "name email")
     .populate("switchHistory.actorCaregiver", "name email")
     .lean();
-};
-
-export const switchSlots = async ({ dateKey, actorId, fromSlotIndex, toSlotIndex }) => {
-  if (!Number.isInteger(fromSlotIndex) || !Number.isInteger(toSlotIndex)) {
-    throw new Error("Invalid slot selection.");
-  }
-
-  const scheduleStart = dateKeyToScheduleStart(dateKey);
-  if (!scheduleStart) throw new Error("Invalid schedule date.");
-
-  const actor = await User.findOne({ _id: actorId, role: "caregiver" }).select("_id").lean();
-  if (!actor) throw new Error("Caregiver account not found.");
-
-  const schedule = await CaregiverSchedule.findOne({ scheduleDate: scheduleStart });
-  const validation = validateSwap({ schedule, actorId, fromSlotIndex, toSlotIndex });
-  if (!validation.ok) throw new Error(validation.message);
-
-  const nextSlots = schedule.slots.map((slot) => ({ ...slot.toObject() }));
-  const fromSlot = nextSlots[fromSlotIndex];
-  const toSlot = nextSlots[toSlotIndex];
-  const fromCaregiverBefore = serializeId(fromSlot.caregiver);
-  const toCaregiverBefore = serializeId(toSlot.caregiver);
-
-  if (toSlot.caregiver) {
-    fromSlot.caregiver = toCaregiverBefore;
-    toSlot.caregiver = fromCaregiverBefore;
-  } else {
-    toSlot.caregiver = fromCaregiverBefore;
-    fromSlot.caregiver = null;
-  }
-  fromSlot.switchCount = Number(fromSlot.switchCount || 0) + 1;
-  toSlot.switchCount = Number(toSlot.switchCount || 0) + 1;
-
-  const actorCurrentSlots = nextSlots.filter(
-    (slot) => serializeId(slot.caregiver) === String(actorId)
-  ).length;
-  if (actorCurrentSlots !== 2) throw new Error("Switch rejected because it would break the two-slot rule.");
-
-  const expectedVersion = schedule.__v;
-  const updated = await CaregiverSchedule.findOneAndUpdate(
-    {
-      _id: schedule._id,
-      __v: expectedVersion,
-      switchHistory: { $not: { $elemMatch: { actorCaregiver: actorId } } },
-      slots: { $elemMatch: { slotIndex: fromSlotIndex, caregiver: actorId } },
-      $and: [
-        { slots: { $elemMatch: { slotIndex: toSlotIndex, caregiver: null } } },
-      ],
-    },
-    {
-      $set: {
-        slots: nextSlots,
-        status: nextSlots.every((slot) => slot.caregiver) ? "generated" : "needs-caregivers",
-      },
-      $push: {
-        switchHistory: {
-          fromSlotIndex,
-          toSlotIndex,
-          actorCaregiver: actorId,
-          fromCaregiver: fromCaregiverBefore,
-          toCaregiver: toCaregiverBefore,
-        },
-      },
-      $inc: { __v: 1 },
-    },
-    { new: true }
-  );
-
-  if (!updated) {
-    throw new Error("The schedule changed while you were switching. Refresh and try again.");
-  }
-
-  return getScheduleForDate(dateKey);
 };
 
 export const setSchedulerAvailability = async (caregiverId, schedulerAvailable) => {

@@ -3,7 +3,6 @@ import {
   getScheduleForDate,
   getSchedulerAvailability,
   setSchedulerAvailability,
-  switchSlots,
   toDateKey,
 } from "../services/caregiverScheduleService.js";
 
@@ -28,25 +27,6 @@ export const generateNextDaySchedule = async (req, res) => {
   try {
     const schedule = await ensureNextDaySchedule();
     res.status(201).json({ schedule });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const switchScheduleSlots = async (req, res) => {
-  try {
-    const { date, fromSlotIndex, toSlotIndex } = req.body;
-    const dateKey = normalizeDate(date);
-    if (!dateKey) return res.status(400).json({ message: "A valid schedule date is required." });
-
-    const schedule = await switchSlots({
-      dateKey,
-      actorId: req.user._id,
-      fromSlotIndex: Number(fromSlotIndex),
-      toSlotIndex: Number(toSlotIndex),
-    });
-
-    res.json({ schedule });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

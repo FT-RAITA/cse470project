@@ -15,12 +15,14 @@ import ActivityDashboard from "../pages/ActivityDashboard";
 import DoctorAppointments from "../pages/DoctorAppointments";
 import Tasks from "../pages/Tasks";
 import CaregiverSchedule from "../pages/CaregiverSchedule";
+import CaregiverSwapRequestNotifier from "../components/CaregiverSwapRequestNotifier";
 import ChatPage from "../pages/ChatPage";
-import { useAuth } from "../context/AuthContext";
 
 export default function AppRoutes() {
   return (
-    <Routes>
+    <>
+      <CaregiverSwapRequestNotifier />
+      <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -46,6 +48,7 @@ export default function AppRoutes() {
       {/* Shared */}
       <Route path="/appointments" element={<Appointments />} />
       <Route path="/appointments/book" element={<BookAppointment />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

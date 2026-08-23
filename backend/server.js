@@ -19,6 +19,7 @@ import doctorAppointmentRoutes from "./routes/doctorAppointmentRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import caregiverScheduleRoutes from "./routes/caregiverScheduleRoutes.js";
+import caregiverSwapRequestRoutes from "./routes/caregiverSwapRequestRoutes.js";
 import { startCaregiverScheduleScheduler } from "./services/caregiverScheduleService.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import { connectDB } from "./config/db.js";
@@ -28,7 +29,12 @@ import {initializeSocket} from "./socket/socket.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
+// Always load backend/.env regardless of whether the server is started from
+// the project root, the backend folder, VS Code, or another working directory.
+// Then also load the current-working-directory .env as a backwards-compatible
+// fallback. Existing variables are not overwritten.
+dotenv.config({ path: path.join(__dirname, ".env"), quiet: true });
+dotenv.config({ quiet: true });
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +64,7 @@ app.use("/api", medicationManagementRoutes);
 app.use("/api", activityRoutes);
 app.use("/api", taskRoutes);
 app.use("/api/caregiver-schedule", caregiverScheduleRoutes);
+app.use("/api/caregiver-swap-requests", caregiverSwapRequestRoutes);
 app.use("/api", doctorAppointmentRoutes);
 
 

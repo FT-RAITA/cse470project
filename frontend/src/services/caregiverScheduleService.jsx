@@ -15,13 +15,6 @@ export const getCaregiverSchedule = (date, token) =>
 export const generateNextDayCaregiverSchedule = (token) =>
   axios.post(`${API}/generate-next-day`, {}, authHeaders(token));
 
-export const switchCaregiverSlots = (date, fromSlotIndex, toSlotIndex, token) =>
-  axios.post(
-    `${API}/switch`,
-    { date, fromSlotIndex, toSlotIndex },
-    authHeaders(token)
-  );
-
 export const updateCaregiverSchedulerAvailability = (schedulerAvailable, token) =>
   axios.patch(
     `${API}/availability`,
