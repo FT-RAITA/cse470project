@@ -1,9 +1,4 @@
-import {
-  acceptSwapRequest,
-  createSwapRequest,
-  getSwapRequestsForCaregiver,
-  rejectSwapRequest,
-} from "../services/caregiverSwapRequestService.js";
+import {acceptSwapRequest,createSwapRequest,getSwapRequestsForCaregiver,rejectSwapRequest,submitHandoverLog, } from "../services/caregiverSwapRequestService.js";
 
 const normalizeDate = (value) =>
   typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -72,6 +67,20 @@ export const rejectCaregiverSwapRequest = async (req, res) => {
       receiverId: req.user._id,
     });
 
+    res.json({ request });
+  } catch (error) {
+    sendError(res, error);
+  }
+};
+
+export const addHandoverLog = async (req, res) => {
+  try {
+    const request = await submitHandoverLog({
+      requestId: req.params.id,
+      requesterId: req.user._id,
+      summary: req.body.summary,
+      attentionNeeded: req.body.attentionNeeded,
+    });
     res.json({ request });
   } catch (error) {
     sendError(res, error);

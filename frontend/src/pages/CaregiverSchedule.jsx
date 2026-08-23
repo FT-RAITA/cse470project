@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Clock3,
   Repeat2,
   Send,
@@ -27,6 +28,7 @@ import {
   getCaregiverSwapRequests,
   rejectCaregiverSwapRequest,
 } from "../services/caregiverSwapRequestService";
+import HandoverLogModal from "../components/HandoverLogModal";
 
 const pad = (n) => String(n).padStart(2, "0");
 const dateKey = (date) =>
@@ -79,6 +81,7 @@ export default function CaregiverSchedule() {
   const [loading, setLoading] = useState(true);
   const [sendingRequest, setSendingRequest] = useState(null);
   const [respondingRequest, setRespondingRequest] = useState(null);
+  const [handoverRequest, setHandoverRequest] = useState(null);
 
   const selectedKey = useMemo(() => dateKey(selectedDate), [selectedDate]);
   const todayKey = useMemo(() => dateKey(new Date()), []);
@@ -202,6 +205,10 @@ export default function CaregiverSchedule() {
   const missingCount = Math.max(0, 6 - assignedCount);
   const pendingIncoming = swapRequests.incoming.filter(
     (request) => request.status === "pending"
+  );
+  // NEW — accepted requests someone sent you, so you can see their handover note.
+  const acceptedIncoming = swapRequests.incoming.filter(
+    (request) => request.status === "accepted"
   );
   const isFutureSchedule = selectedKey > todayKey;
 
@@ -457,6 +464,48 @@ export default function CaregiverSchedule() {
                 </div>
               )}
 
+              {/* NEW — accepted requests sent TO you: show requester's handover note */}
+              {acceptedIncoming.length > 0 && (
+                <div className="mt-4 space-y-3 border-t border-border pt-4">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                    You're covering for
+                  </p>
+                  {acceptedIncoming.map((request) => (
+                    <div
+                      key={request._id}
+                      className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ClipboardList size={15} className="text-emerald-700" />
+                        <p className="text-sm font-semibold text-ink">
+                          {request.requester?.name || "A caregiver"}'s Slot{" "}
+                          {request.requesterSlotIndex + 1} ·{" "}
+                          {slotLabels[request.requesterSlotIndex]}
+                        </p>
+                      </div>
+                      {request.handoverLog?.summary ? (
+                        <div className="mt-2 text-xs text-ink-soft">
+                          <p>
+                            <span className="font-semibold text-ink">What was done: </span>
+                            {request.handoverLog.summary}
+                          </p>
+                          {request.handoverLog.attentionNeeded && (
+                            <p className="mt-1">
+                              <span className="font-semibold text-ink">Needs attention: </span>
+                              {request.handoverLog.attentionNeeded}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-ink-soft">
+                          No handover note left yet — check back closer to the shift.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {swapRequests.sent.length > 0 && (
                 <div className="mt-4 border-t border-border pt-4">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
@@ -476,13 +525,28 @@ export default function CaregiverSchedule() {
                           : your Slot {request.requesterSlotIndex + 1} for their
                           Slot {request.receiverSlotIndex + 1}
                         </p>
-                        <span
-                          className={`w-fit rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                            statusClass[request.status] || statusClass.expired
-                          }`}
-                        >
-                          {statusText[request.status] || request.status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-fit rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                              statusClass[request.status] || statusClass.expired
+                            }`}
+                          >
+                            {statusText[request.status] || request.status}
+                          </span>
+                          {/* NEW — leave/edit the handover log once accepted */}
+                          {request.status === "accepted" && (
+                            <button
+                              type="button"
+                              onClick={() => setHandoverRequest(request)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/10"
+                            >
+                              <ClipboardList size={12} />
+                              {request.handoverLog?.submittedAt
+                                ? "Edit handover log"
+                                : "Leave handover log"}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -490,6 +554,7 @@ export default function CaregiverSchedule() {
               )}
 
               {pendingIncoming.length === 0 &&
+                acceptedIncoming.length === 0 &&
                 swapRequests.sent.length === 0 && (
                   <p className="mt-4 rounded-lg bg-paper px-3 py-3 text-xs text-ink-soft">
                     No swap requests for this schedule yet.
@@ -664,6 +729,15 @@ export default function CaregiverSchedule() {
           </>
         )}
       </main>
+
+      {/* NEW — handover log modal */}
+      {handoverRequest && (
+        <HandoverLogModal
+          request={handoverRequest}
+          onClose={() => setHandoverRequest(null)}
+          onSubmitted={() => fetchSwapRequests()}
+        />
+      )}
     </div>
   );
 }

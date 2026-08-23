@@ -119,13 +119,30 @@ export default function Tasks() {
     loadElders();
   }, [token]);
 
-    const stats = useMemo(() => {
+  const stats = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter((task) => task.status === "completed").length;
     const incomplete = tasks.filter((task) => task.status === "incomplete").length;
     const pending = tasks.filter((task) => task.status === "pending").length;
 
     return { total, completed, incomplete, pending };
+  }, [tasks]);
+
+  // NEW — coverage banner data derived straight from the tagged tasks
+  // getTodayTasks already returns, instead of a separate swap-request call.
+  const coverageSummaries = useMemo(() => {
+    const grouped = tasks
+      .filter((task) => task.isCoverage)
+      .reduce((acc, task) => {
+        const key = task.coverageInfo?.originalCaregiver?._id || "unknown";
+        if (!acc[key]) {
+          acc[key] = { info: task.coverageInfo, count: 0 };
+        }
+        acc[key].count += 1;
+        return acc;
+      }, {});
+
+    return Object.values(grouped);
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
@@ -188,7 +205,9 @@ export default function Tasks() {
           return !isThisElder || task.status !== "pending";
         });
 
-        return [...otherElderTasks, ...(response.data || [])].sort(
+        // FIXED — was `otherElderTasks`, which was never defined and threw
+        // a ReferenceError every time this ran.
+        return [...otherTasks, ...(response.data || [])].sort(
           (a, b) =>
             (b.priorityScore || 0) - (a.priorityScore || 0)
         );
@@ -433,6 +452,36 @@ export default function Tasks() {
           </div>
         </div>
 
+        {/* NEW — coverage banner, driven by isCoverage-tagged tasks, not a
+            separate swap-request fetch. Only shows when real coverage tasks exist. */}
+        {coverageSummaries.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {coverageSummaries.map(({ info, count }, idx) => (
+              <div
+                key={idx}
+                className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+              >
+                <p className="font-semibold">
+                  You're covering {info?.originalCaregiver?.name || "a caregiver"}'s shift
+                  — {count} task{count === 1 ? "" : "s"} for their elder(s)
+                </p>
+                {info?.handoverLog?.summary ? (
+                  <>
+                    <p className="mt-1">{info.handoverLog.summary}</p>
+                    {info.handoverLog.attentionNeeded && (
+                      <p className="mt-1">
+                        <strong>Needs attention:</strong> {info.handoverLog.attentionNeeded}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-1 text-amber-700">No handover note left yet.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Task list */}
         {loading ? (
           <div className="space-y-4">
@@ -505,6 +554,14 @@ export default function Tasks() {
                           >
                             {priority.label}
                           </span>
+
+                          {/* NEW — flags a task that belongs to an elder you're
+                              temporarily covering, not one of your own. */}
+                          {task.isCoverage && (
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                              Covering
+                            </span>
+                          )}
 
                           {isIncomplete && (
                             <span className="flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">

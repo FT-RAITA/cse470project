@@ -47,9 +47,16 @@ const caregiverSwapRequestSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    respondedAt: {
+        respondedAt: {
       type: Date,
       default: null,
+    },
+    // the requester's short note
+    handoverLog: {
+      summary: { type: String, trim: true, maxlength: 1000, default: "" },
+      attentionNeeded: { type: String, trim: true, maxlength: 1000, default: "" },
+      submittedAt: { type: Date, default: null },
+      submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     },
   },
   { timestamps: true }

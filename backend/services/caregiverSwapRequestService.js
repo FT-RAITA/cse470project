@@ -2,6 +2,8 @@ import CaregiverSchedule from "../models/caregiverSchedule.js";
 import CaregiverSwapRequest from "../models/caregiverSwapRequest.js";
 import User from "../models/user.js";
 import { dateKeyToScheduleStart } from "./caregiverScheduleService.js";
+import Elder from "../models/elder.js";
+import { createCoverageForAcceptedSwap } from "./shiftCoverageService.js";
 
 const serializeId = (value) => {
   if (!value) return null;
@@ -355,7 +357,26 @@ export const acceptSwapRequest = async ({ requestId, receiverId }) => {
         409
       );
     }
+   //turn the requester's elders into "temporary elders" for the duration of shift
+    await createCoverageForAcceptedSwap({
+      swapRequestId: request._id,
+      requesterId,
+      receiverId: lockedReceiverId,
+      slotStartAt: requesterSlot.startAt,
+      slotEndAt: requesterSlot.endAt,
+      Elder,
+    });
 
+    await CaregiverSwapRequest.updateOne(
+      { _id: request._id, status: "processing" },
+      {
+        $set: {
+          status: "accepted",
+          processingAt: null,
+          respondedAt: new Date(),
+        },
+      }
+    );
     await CaregiverSwapRequest.updateOne(
       { _id: request._id, status: "processing" },
       {
@@ -432,4 +453,25 @@ export const rejectSwapRequest = async ({ requestId, receiverId }) => {
   }
 
   return request;
+};
+export const submitHandoverLog = async ({ requestId, requesterId, summary, attentionNeeded }) => {
+  const request = await CaregiverSwapRequest.findOne({
+    _id: requestId,
+    requester: requesterId,
+  });
+
+  if (!request) throw createError("Swap request not found.", 404);
+  if (request.status !== "accepted") {
+    throw createError("A handover log can only be added once the swap is accepted.");
+  }
+
+  request.handoverLog = {
+    summary: summary?.trim() || "",
+    attentionNeeded: attentionNeeded?.trim() || "",
+    submittedAt: new Date(),
+    submittedBy: requesterId,
+  };
+  await request.save();
+
+  return populateRequest(CaregiverSwapRequest.findById(request._id)).lean();
 };

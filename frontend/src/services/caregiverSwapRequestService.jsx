@@ -1,5 +1,6 @@
 import axios from "axios";
 
+
 const API_ROOT = (
   import.meta.env.VITE_API_URL || "http://localhost:5001/api"
 ).replace(/\/$/, "");
@@ -34,3 +35,10 @@ export const acceptCaregiverSwapRequest = (id, token) =>
 
 export const rejectCaregiverSwapRequest = (id, token) =>
   axios.post(`${API}/${id}/reject`, {}, authHeaders(token));
+
+export const submitHandoverLog = (id, summary, attentionNeeded, token) =>
+  axios.post(
+    `${API}/${id}/handover-log`,
+    { summary, attentionNeeded },
+    authHeaders(token)
+  );

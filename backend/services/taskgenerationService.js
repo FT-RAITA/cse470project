@@ -6,6 +6,7 @@ import MealSchedule from "../models/mealSchedule.js";
 import Activity from "../models/activity.js";
 import MoodCheckin from "../models/MoodCheckin.js";
 import DoctorAppointment from "../models/DoctorAppointment.js";
+import { getActiveCoverageForCaregiver } from "./shiftCoverageService.js";
 
 const OVERDUE_HOURS = 2;
 const OVERDUE_MS = OVERDUE_HOURS*60*60*1000;
@@ -310,12 +311,61 @@ export const generateDailyTasksForCaregiver = async (caregiverId) => {
   const now = new Date();
   await flagOverdueTasksIncomplete(caregiverId, now);
 
-  return Task.find({
+  const ownTasks = await Task.find({
     caregiver: caregiverId,
     createdAt: { $gte: startOfDay(now) },
   })
     .sort({ status: 1, priorityScore: -1, dueAt: 1 })
-    .populate("elder", "fullName elderID");
+    .populate("elder", "fullName elderID")
+    .lean();
+
+  
+  const activeCoverage = await getActiveCoverageForCaregiver(caregiverId, now);
+
+  let coverageTasks = [];
+  if (activeCoverage.length) {
+    const coverageElderIds = activeCoverage.map((c) => c.elder._id);
+
+   
+    for (const elderId of coverageElderIds) {
+      await generateTasksForElder(elderId);
+    }
+
+    const coverageByElder = new Map(
+      activeCoverage.map((c) => [String(c.elder._id), c])
+    );
+
+    const rawCoverageTasks = await Task.find({
+      elder: { $in: coverageElderIds },
+      createdAt: { $gte: startOfDay(now) },
+      status: { $ne: "completed" },
+    })
+      .populate("elder", "fullName elderID")
+      .lean();
+
+    coverageTasks = rawCoverageTasks
+      .filter((task) => {
+        const coverage = coverageByElder.get(String(task.elder._id));
+        return coverage && task.dueAt >= coverage.startAt && task.dueAt <= coverage.endAt;
+      })
+      .map((task) => {
+        const coverage = coverageByElder.get(String(task.elder._id));
+        return {
+          ...task,
+          isCoverage: true,
+          coverageInfo: {
+            originalCaregiver: coverage.originalCaregiver,
+            handoverLog: coverage.swapRequest?.handoverLog || null,
+            startAt: coverage.startAt,
+            endAt: coverage.endAt,
+          },
+        };
+      });
+  }
+
+  return [...ownTasks, ...coverageTasks].sort(
+    (a, b) => (b.priorityScore || 0) - (a.priorityScore || 0)
+  );
 };
 
 export const _internal = { startOfDay, endOfDay, dateKey, priorityFromMinutes, flagOverdueTasksIncomplete };

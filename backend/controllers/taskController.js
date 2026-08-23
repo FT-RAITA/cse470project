@@ -7,7 +7,7 @@ import {
   generateDailyTasksForCaregiver,
   generateTasksForElder,
 } from "../services/taskgenerationService.js";
-
+import { isCoveringElder } from "../services/shiftCoverageService.js"; 
 const applyCompletionSideEffect = async (task, userId) => {
   const { refModel, refId } = task.relatedRef || {};
   if (!refModel || !refId) return;
@@ -66,7 +66,16 @@ export const regenerateForElder = async (req, res) => {
 
 export const completeTask = async (req, res) => {
   try {
-    const task = await Task.findOne({ _id: req.params.id, caregiver: req.user.id });
+    let task = await Task.findOne({ _id: req.params.id, caregiver: req.user.id });
+
+    if (!task) {
+      const candidate = await Task.findById(req.params.id);
+      if (candidate) {
+        const covering = await isCoveringElder(req.user.id, candidate.elder);
+        if (covering) task = candidate;
+      }
+    }
+
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
@@ -93,3 +102,4 @@ export const autoCompleteRelatedTask = async (refModel, refId) => {
     console.error("autoCompleteRelatedTask failed:", error.message);
   }
 };
+
