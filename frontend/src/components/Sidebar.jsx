@@ -1,5 +1,16 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutGrid, UserPlus, LogOut, HeartHandshake, CalendarDays, Dumbbell, Stethoscope, ListChecks, ClipboardClock, } from "lucide-react";
+import {
+  LayoutGrid,
+  UserPlus,
+  LogOut,
+  HeartHandshake,
+  CalendarDays,
+  Dumbbell,
+  Stethoscope,
+  ListChecks,
+  ClipboardClock,
+  BarChart3,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar() {
@@ -20,6 +31,7 @@ export default function Sidebar() {
           { to: "/doctor-appointments", label: "Doctor's Appointment", icon: Stethoscope },
           { to: "/tasks", label: "Care Tasks", icon: ListChecks },
           { to: "/schedule", label: "Caregiver Schedule", icon: ClipboardClock },
+          { to: "/caregiver-performance", label: "Performance", icon: BarChart3 },
         ]
       : []),
     { to: "/appointments", label: "Appointments", icon: CalendarDays },

@@ -17,37 +17,36 @@ import Tasks from "../pages/Tasks";
 import CaregiverSchedule from "../pages/CaregiverSchedule";
 import CaregiverSwapRequestNotifier from "../components/CaregiverSwapRequestNotifier";
 import ChatPage from "../pages/ChatPage";
+import CaregiverPerformanceReport from "../pages/CaregiverPerformanceReport";
 
 export default function AppRoutes() {
   return (
     <>
       <CaregiverSwapRequestNotifier />
       <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      {/* Caregiver */}
-      <Route path="/dashboard" element={<CaregiverDashboard />} />
-      <Route path="/elders/add" element={<AddElder />} />
-      <Route path="/elders/:id" element={<ElderProfile />} />
-      <Route path="/elders/:id/edit" element={<EditElder />} />
-      <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
-      <Route path="/elders/:id/medications" element={<MedicationDashboard />} />
-      <Route path="/activities" element={<ActivityDashboard />} />
-      <Route path="/doctor-appointments" element={<DoctorAppointments />} />
-      <Route path="/tasks" element={<Tasks />} />
-      <Route path="/schedule" element={<CaregiverSchedule />} />
-      <Route path="/elders/:id/chat" element={<ChatPage />} />
+        <Route path="/dashboard" element={<CaregiverDashboard />} />
+        <Route path="/elders/add" element={<AddElder />} />
+        <Route path="/elders/:id" element={<ElderProfile />} />
+        <Route path="/elders/:id/edit" element={<EditElder />} />
+        <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
+        <Route path="/elders/:id/medications" element={<MedicationDashboard />} />
+        <Route path="/activities" element={<ActivityDashboard />} />
+        <Route path="/doctor-appointments" element={<DoctorAppointments />} />
+        <Route path="/tasks" element={<Tasks />} />
+        <Route path="/schedule" element={<CaregiverSchedule />} />
+        <Route path="/caregiver-performance" element={<CaregiverPerformanceReport />} />
+        <Route path="/elders/:id/chat" element={<ChatPage />} />
 
-      {/* Family member */}
-      <Route path="/family/dashboard" element={<FamilyDashboard />} />
-      <Route path="/family/elders/:id" element={<FamilyElderView />} />
-      <Route path="/family/elders/:id/chat" element={<ChatPage />} />
+        <Route path="/family/dashboard" element={<FamilyDashboard />} />
+        <Route path="/family/elders/:id" element={<FamilyElderView />} />
+        <Route path="/family/elders/:id/chat" element={<ChatPage />} />
 
-      {/* Shared */}
-      <Route path="/appointments" element={<Appointments />} />
-      <Route path="/appointments/book" element={<BookAppointment />} />
+        <Route path="/appointments" element={<Appointments />} />
+        <Route path="/appointments/book" element={<BookAppointment />} />
       </Routes>
     </>
   );
