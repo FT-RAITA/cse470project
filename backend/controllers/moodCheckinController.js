@@ -1,5 +1,7 @@
 import MoodCheckin from '../models/MoodCheckin.js';
 import Elder from '../models/elder.js';
+import { completeMoodCheckinTask, reopenMoodCheckinTask } from './taskController.js';
+import { generateTasksForElder } from '../services/taskgenerationService.js';
 
 // Caregiver OR a connected family member can read
 const assertReadAccess = async (elderId, userId) => {
@@ -43,6 +45,8 @@ export const createMoodCheckin = async (req, res) => {
     });
 
     const saved = await checkin.save();
+    await completeMoodCheckinTask(id, saved.date, saved._id);
+    await generateTasksForElder(id);
     res.status(201).json(saved);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -84,6 +88,7 @@ export const getMoodCheckinById = async (req, res) => {
 };
 
 // Delete a check-in (caregiver only)
+
 export const deleteMoodCheckin = async (req, res) => {
   try {
     const { checkinId } = req.params;
@@ -93,6 +98,9 @@ export const deleteMoodCheckin = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: 'Check-in not found' });
     }
+
+    await reopenMoodCheckinTask(deleted.elder, deleted.date);
+
     res.json({ message: 'Check-in deleted successfully' });
   } catch (error) {
     res.status(400).json({ message: error.message });

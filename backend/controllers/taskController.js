@@ -3,11 +3,12 @@ import Elder from "../models/elder.js";
 import Activity from "../models/activity.js";
 import DoctorAppointment from "../models/DoctorAppointment.js";
 import MedicationDoseLog from "../models/medicationDoseLog.js";
+import MoodCheckin from "../models/MoodCheckin.js"; // NEW
 import {
   generateDailyTasksForCaregiver,
   generateTasksForElder,
 } from "../services/taskgenerationService.js";
-import { isCoveringElder } from "../services/shiftCoverageService.js"; 
+import { isCoveringElder } from "../services/shiftCoverageService.js";
 const applyCompletionSideEffect = async (task, userId) => {
   const { refModel, refId } = task.relatedRef || {};
   if (!refModel || !refId) return;
@@ -103,3 +104,70 @@ export const autoCompleteRelatedTask = async (refModel, refId) => {
   }
 };
 
+export const completeMoodCheckinTask = async (elderId, checkinDate, checkinId) => {
+  try {
+    const day = new Date(checkinDate || Date.now());
+    const dayStart = new Date(day);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(day);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    await Task.findOneAndUpdate(
+      {
+        elder: elderId,
+        type: "mood_checkin",
+        status: { $in: ["pending", "incomplete"] }, 
+        dueAt: { $gte: dayStart, $lte: dayEnd },
+      },
+      {
+        status: "completed",
+        completedAt: new Date(),
+        autoCompleted: true,
+        "relatedRef.refId": checkinId,
+      }
+    );
+  } catch (error) {
+    console.error("completeMoodCheckinTask failed:", error.message);
+  }
+};
+
+export const reopenMoodCheckinTask = async (elderId, checkinDate) => {
+  try {
+    const day = new Date(checkinDate || Date.now());
+    const dayStart = new Date(day);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(day);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const remainingCheckin = await MoodCheckin.findOne({
+      elder: elderId,
+      date: { $gte: dayStart, $lte: dayEnd },
+    });
+    if (remainingCheckin) return; // today's still covered — nothing to reopen
+
+    await Task.findOneAndUpdate(
+      {
+        elder: elderId,
+        type: "mood_checkin",
+        status: "completed",
+        autoCompleted: true, // only touch ones WE auto-completed, never a manual complete
+        dueAt: { $gte: dayStart, $lte: dayEnd },
+      },
+      {
+        status: "pending",
+        completedAt: null,
+        autoCompleted: false,
+        "relatedRef.refId": null,
+      }
+    );
+
+    await Task.deleteMany({
+      elder: elderId,
+      type: "emotional_support",
+      status: "pending",
+      dueAt: { $gte: dayStart, $lte: dayEnd },
+    });
+  } catch (error) {
+    console.error("reopenMoodCheckinTask failed:", error.message);
+  }
+};
