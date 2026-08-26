@@ -18,6 +18,7 @@ import CaregiverSchedule from "../pages/CaregiverSchedule";
 import CaregiverSwapRequestNotifier from "../components/CaregiverSwapRequestNotifier";
 import ChatPage from "../pages/ChatPage";
 import CaregiverPerformanceReport from "../pages/CaregiverPerformanceReport";
+import DailyRoutine from "../pages/dailyRoutine";
 
 export default function AppRoutes() {
   return (
@@ -34,6 +35,7 @@ export default function AppRoutes() {
         <Route path="/elders/:id/edit" element={<EditElder />} />
         <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
         <Route path="/elders/:id/medications" element={<MedicationDashboard />} />
+        <Route path="/elders/:id/routine" element={<DailyRoutine />} />
         <Route path="/activities" element={<ActivityDashboard />} />
         <Route path="/doctor-appointments" element={<DoctorAppointments />} />
         <Route path="/tasks" element={<Tasks />} />
@@ -44,7 +46,7 @@ export default function AppRoutes() {
         <Route path="/family/dashboard" element={<FamilyDashboard />} />
         <Route path="/family/elders/:id" element={<FamilyElderView />} />
         <Route path="/family/elders/:id/chat" element={<ChatPage />} />
-
+      
         <Route path="/appointments" element={<Appointments />} />
         <Route path="/appointments/book" element={<BookAppointment />} />
       </Routes>
