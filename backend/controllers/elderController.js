@@ -157,13 +157,29 @@ export const getElderById = async (req, res) => {
       ],
     }).lean();
 
-    if (!elder) {
-      return res.status(404).json({
-        message: "Elder not found",
-      });
+    if (elder) {
+      return res.status(200).json(elder);
     }
 
-    return res.status(200).json(elder);
+    // Not the owning caregiver and not a family member — check whether
+    // the requester is a caregiver currently covering this elder's shift.
+    const covering = await isCoveringElder(req.user.id, req.params.id);
+
+    if (covering) {
+      const coveredElder = await Elder.findById(req.params.id).lean();
+
+      if (coveredElder) {
+        return res.status(200).json({
+          ...coveredElder,
+          isTemporary: true,
+          coverageId: covering._id,
+        });
+      }
+    }
+
+    return res.status(404).json({
+      message: "Elder not found",
+    });
 
   } catch (error) {
 
