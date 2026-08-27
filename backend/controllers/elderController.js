@@ -149,11 +149,12 @@ export const getAllElders = async (req, res) => {
 export const getElderById = async (req, res) => {
   try {
 
-    if (!assertCaregiver(req, res)) return;
-
     const elder = await Elder.findOne({
       _id: req.params.id,
-      caregiver: req.user._id,
+      $or: [
+        { caregiver: req.user._id },
+        { "familyMembers.user": req.user._id },
+      ],
     }).lean();
 
     if (!elder) {
