@@ -88,11 +88,11 @@ export default function Login() {
         </div>
       </form>
 
-      <p className="text-center text-base text-gray-500">
+      <p className="text-center text-base text-ink-soft">
         Don't have an account?{" "}
         <Link
           to="/register"
-          className="text-[#4F8A8B] font-semibold hover:underline"
+          className="font-semibold text-primary hover:underline dark:text-ink"
         >
           Register here
         </Link>

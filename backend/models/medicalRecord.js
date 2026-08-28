@@ -29,8 +29,8 @@ const medicalRecordSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Active", "Resolved", "Monitoring", "Critical"],
-      default: "Active",
+      enum: ["Logged", "Active", "Resolved", "Monitoring", "Critical"],
+      default: "Logged",
     },
     bpSystolic: Number,
     bpDiastolic: Number,

@@ -18,7 +18,7 @@ export default function LeaderboardTable({ leaderboard = [], loading }) {
                 <th className="px-4 py-3 font-semibold">Rank</th>
                 <th className="px-4 py-3 font-semibold">Caregiver</th>
                 <th className="px-4 py-3 font-semibold">Completion</th>
-                <th className="px-4 py-3 font-semibold">Attendance</th>
+                <th className="px-4 py-3 font-semibold">On-Time</th>
                 <th className="px-4 py-3 font-semibold">Score</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
               </tr>
@@ -40,7 +40,7 @@ export default function LeaderboardTable({ leaderboard = [], loading }) {
                       )}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{row.completionRate}%</td>
-                    <td className="px-4 py-3 font-mono text-xs">{row.attendanceRate}%</td>
+                    <td className="px-4 py-3 font-mono text-xs">{row.onTimeRate ?? 0}%</td>
                     <td className="px-4 py-3 font-display text-base font-semibold text-ink">{row.score}</td>
                     <td className="px-4 py-3 text-xs font-semibold text-ink-soft">{row.level}</td>
                   </tr>

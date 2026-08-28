@@ -14,6 +14,7 @@ import {
 
 import Button from "../components/Button";
 import InputField from "../components/InputField";
+import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 
 import {
@@ -347,6 +348,7 @@ export default function FamilyDashboard() {
 
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
 
             {/* Notification button */}
             <div className="relative">

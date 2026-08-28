@@ -4,9 +4,12 @@ import toast from "react-hot-toast";
 import {
   getMedicalRecords,
   deleteMedicalRecord,
+  updateMedicalRecord,
 } from "../../services/elderRecordsService";
 
 const CATEGORIES = ["", "Vitals", "Diagnosis", "Allergy", "Checkup", "Medication", "General"];
+const STATUS_OPTIONS = ["Active", "Monitoring", "Critical", "Resolved"];
+const STATUS_CATEGORIES = new Set(["Allergy", "Diagnosis"]);
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString("en-US", {
@@ -17,6 +20,7 @@ function formatDate(d) {
 }
 
 const statusStyle = {
+  Logged: "bg-paper text-ink-soft border border-border",
   Active: "bg-emerald-100 text-emerald-800",
   Resolved: "bg-sky-100 text-sky-800",
   Monitoring: "bg-accent-soft text-primary-dark",
@@ -35,24 +39,30 @@ export default function RecordsTable({ elderId, token, refreshKey }) {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const reload = async (pageOverride = page) => {
+    const res = await getMedicalRecords(elderId, token, {
+      search,
+      category,
+      from,
+      to,
+      sort,
+      order,
+      page: pageOverride,
+      limit: 8,
+    });
+    setItems(res.data.items);
+    setPages(res.data.pages);
+    setTotal(res.data.total);
+    setPage(pageOverride);
+  };
 
   useEffect(() => {
     const t = setTimeout(async () => {
       try {
         setLoading(true);
-        const res = await getMedicalRecords(elderId, token, {
-          search,
-          category,
-          from,
-          to,
-          sort,
-          order,
-          page,
-          limit: 8,
-        });
-        setItems(res.data.items);
-        setPages(res.data.pages);
-        setTotal(res.data.total);
+        await reload(page);
       } catch (err) {
         toast.error(err.response?.data?.message || "Could not load records");
       } finally {
@@ -70,24 +80,27 @@ export default function RecordsTable({ elderId, token, refreshKey }) {
     }
   };
 
+  const handleStatusChange = async (row, nextStatus) => {
+    if (nextStatus === row.status) return;
+    try {
+      setUpdatingId(row._id);
+      await updateMedicalRecord(elderId, row._id, { status: nextStatus }, token);
+      setItems((prev) =>
+        prev.map((item) => (item._id === row._id ? { ...item, status: nextStatus } : item))
+      );
+      toast.success(`Status set to ${nextStatus}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not update status");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const handleDelete = async (recordId) => {
     try {
       await deleteMedicalRecord(elderId, recordId, token);
       toast.success("Record deleted");
-      const res = await getMedicalRecords(elderId, token, {
-        search,
-        category,
-        from,
-        to,
-        sort,
-        order,
-        page: 1,
-        limit: 8,
-      });
-      setPage(1);
-      setItems(res.data.items);
-      setPages(res.data.pages);
-      setTotal(res.data.total);
+      await reload(1);
     } catch (err) {
       toast.error(err.response?.data?.message || "Delete failed");
     }
@@ -194,42 +207,56 @@ export default function RecordsTable({ elderId, token, refreshKey }) {
               </tr>
             </thead>
             <tbody>
-              {items.map((row) => (
-                <tr key={row._id} className="border-t border-border hover:bg-paper/50">
-                  <td className="px-4 py-3 font-mono text-xs">
-                    {formatDate(row.recordedAt)}
-                  </td>
-                  <td className="px-4 py-3">{row.category}</td>
-                  <td className="px-4 py-3">{row.updatedBy?.name || "—"}</td>
-                  <td className="max-w-[220px] px-4 py-3">
-                    <p className="font-medium text-ink">{row.title}</p>
-                    {row.description && (
-                      <p className="truncate text-xs text-ink-soft">
-                        {row.description}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        statusStyle[row.status] || "bg-paper text-ink-soft"
-                      }`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(row._id)}
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-rose hover:bg-rose-soft"
-                    >
-                      <Trash2 size={13} />
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {items.map((row) => {
+                const canSwitchStatus = STATUS_CATEGORIES.has(row.category);
+                return (
+                  <tr key={row._id} className="border-t border-border hover:bg-paper/50">
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {formatDate(row.recordedAt)}
+                    </td>
+                    <td className="px-4 py-3">{row.category}</td>
+                    <td className="px-4 py-3">{row.updatedBy?.name || "—"}</td>
+                    <td className="max-w-[220px] px-4 py-3">
+                      <p className="font-medium text-ink">{row.title}</p>
+                      {row.description && (
+                        <p className="truncate text-xs text-ink-soft">
+                          {row.description}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {canSwitchStatus ? (
+                        <select
+                          value={STATUS_OPTIONS.includes(row.status) ? row.status : "Active"}
+                          disabled={updatingId === row._id}
+                          onChange={(e) => handleStatusChange(row, e.target.value)}
+                          className={`rounded-lg border border-border bg-paper px-2.5 py-1.5 text-xs font-semibold ${
+                            statusStyle[row.status] || ""
+                          }`}
+                        >
+                          {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-ink-soft">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(row._id)}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-rose hover:bg-rose-soft"
+                      >
+                        <Trash2 size={13} />
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

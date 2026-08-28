@@ -8,7 +8,6 @@ export default function ScoreRing({ score = 0, level = "Needs Improvement", brea
   const rows = [
     { label: "Task Completion", value: breakdown.taskCompletion },
     { label: "On-Time Completion", value: breakdown.onTimeCompletion },
-    { label: "Shift Attendance", value: breakdown.shiftAttendance },
     { label: "Missed Tasks", value: breakdown.missedTasks },
   ];
 
@@ -47,7 +46,7 @@ export default function ScoreRing({ score = 0, level = "Needs Improvement", brea
             ))}
           </ul>
           <p className="mt-3 text-[11px] text-ink-soft">
-            Weights: Completion 40% · On-time 25% · Attendance 20% · Missed 15%
+            Weights: Completion 50% · On-time 35% · Missed 15%
           </p>
         </div>
       </div>

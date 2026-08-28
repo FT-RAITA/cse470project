@@ -1,6 +1,7 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import Landing from "../pages/Landing";
 import AddElder from "../pages/AddElder";
 import ElderProfile from "../pages/ElderProfile";
 import EditElder from "../pages/EditElder";
@@ -19,13 +20,14 @@ import CaregiverSwapRequestNotifier from "../components/CaregiverSwapRequestNoti
 import ChatPage from "../pages/ChatPage";
 import CaregiverPerformanceReport from "../pages/CaregiverPerformanceReport";
 import DailyRoutine from "../pages/dailyRoutine";
+import WellnessProgress from "../pages/WellnessProgress";
 
 export default function AppRoutes() {
   return (
     <>
       <CaregiverSwapRequestNotifier />
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -36,6 +38,7 @@ export default function AppRoutes() {
         <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
         <Route path="/elders/:id/medications" element={<MedicationDashboard />} />
         <Route path="/elders/:id/routine" element={<DailyRoutine />} />
+        <Route path="/elders/:id/wellness-progress" element={<WellnessProgress />} />
         <Route path="/activities" element={<ActivityDashboard />} />
         <Route path="/doctor-appointments" element={<DoctorAppointments />} />
         <Route path="/tasks" element={<Tasks />} />

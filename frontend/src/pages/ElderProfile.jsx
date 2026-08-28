@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake, Smile, Copy, Check, FolderHeart, Pill, CalendarClock } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplet, Phone, MapPin, Cake, Smile, Copy, Check, FolderHeart, Pill, CalendarClock, TrendingUp } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Button from "../components/Button";
 import MedicalHistoryCard from "../components/MedicalHistoryCard";
@@ -175,6 +175,16 @@ export default function ElderProfile() {
                 onClick={() => navigate(`/elders/${id}/records`)}
               >
                 Records Portal
+              </Button>
+
+              <Button
+                variant="secondary"
+                icon={TrendingUp}
+                size="md"
+                fullWidth={false}
+                onClick={() => navigate(`/elders/${id}/wellness-progress`)}
+              >
+                Wellness Progress
               </Button>
               
               <Button

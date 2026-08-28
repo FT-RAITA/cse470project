@@ -1,21 +1,17 @@
 import User from "../../models/user.js";
 import { SEED_TEAM } from "./seedData.js";
 import { getCaregiverTaskMetrics, resolveRange } from "./taskMetricsService.js";
-import { getCaregiverShiftMetrics } from "./shiftMetricsService.js";
 import { calculatePerformanceScore, deriveBadges } from "./scoreCalculator.js";
 
 const buildEntry = async (id, name, range, isCurrentUser = false) => {
   const tasks = await getCaregiverTaskMetrics(id, range, name);
-  const shifts = await getCaregiverShiftMetrics(id, range, name);
+  const hasTasks = tasks.tasksAssigned > 0;
+
   const scoreInfo = calculatePerformanceScore({
     tasksAssigned: tasks.tasksAssigned,
     tasksCompleted: tasks.tasksCompleted,
     tasksMissed: tasks.tasksMissed,
     onTimeCompleted: tasks.onTimeCompleted,
-    shiftsScheduled: shifts.shiftsScheduled,
-    shiftsCompleted: shifts.shiftsCompleted,
-    shiftsMissed: shifts.shiftsMissed,
-    attendanceRate: shifts.attendanceRate,
   });
 
   return {
@@ -25,15 +21,12 @@ const buildEntry = async (id, name, range, isCurrentUser = false) => {
     tasksAssigned: tasks.tasksAssigned,
     tasksCompleted: tasks.tasksCompleted,
     tasksMissed: tasks.tasksMissed,
-    shiftsScheduled: shifts.shiftsScheduled,
     completionRate: tasks.completionRate,
     onTimeRate: tasks.onTimeRate,
-    attendanceRate: shifts.attendanceRate,
-    score: scoreInfo.score,
-    level: scoreInfo.level,
+    score: hasTasks ? scoreInfo.score : 0,
+    level: hasTasks ? scoreInfo.level : "No activity",
     breakdown: scoreInfo.breakdown,
     taskSource: tasks.source,
-    shiftSource: shifts.source,
   };
 };
 
@@ -62,32 +55,33 @@ export const buildLeaderboard = async (period = "7d", currentUser = null) => {
     }
   }
 
-  entries.sort(
-    (a, b) =>
+  entries.sort((a, b) => {
+    const aHasTasks = a.tasksAssigned > 0 ? 1 : 0;
+    const bHasTasks = b.tasksAssigned > 0 ? 1 : 0;
+    return (
+      bHasTasks - aHasTasks ||
       b.score - a.score ||
-      b.tasksAssigned - a.tasksAssigned ||
-      b.tasksCompleted - a.tasksCompleted ||
       b.completionRate - a.completionRate ||
+      b.onTimeRate - a.onTimeRate ||
+      b.tasksAssigned - a.tasksAssigned ||
       a.name.localeCompare(b.name)
-  );
+    );
+  });
 
   const ranked = entries.map((e, i) => ({
     ...e,
     rank: i + 1,
   }));
 
-  const weeklyWinner =
-    ranked.find((e) => e.tasksAssigned > 0 || e.shiftsScheduled > 0) || null;
+  const weeklyWinner = ranked.find((e) => e.tasksAssigned > 0) || null;
 
   ranked.forEach((e) => {
     e.badges = deriveBadges({
       score: e.score,
       tasksMissed: e.tasksMissed,
       onTimeRate: e.onTimeRate,
-      attendanceRate: e.attendanceRate,
       isWeeklyWinner: !!weeklyWinner && e.caregiverId === weeklyWinner.caregiverId,
       tasksAssigned: e.tasksAssigned,
-      shiftsScheduled: e.shiftsScheduled,
     });
   });
 

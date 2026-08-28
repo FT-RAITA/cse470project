@@ -114,7 +114,7 @@ export default function Register() {
 
         {/* Role selector */}
         <div className="mb-5">
-          <label className="block text-base font-semibold text-[#3B7D7F] mb-2">
+          <label className="mb-2 block text-base font-semibold text-primary dark:text-ink">
             I am registering as
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -126,19 +126,18 @@ export default function Register() {
                 key={option.value}
                 type="button"
                 onClick={() => setForm({ ...form, role: option.value })}
-                className={`py-4 rounded-2xl text-lg font-semibold border-2 transition-colors
-                  ${
-                    form.role === option.value
-                      ? "bg-[#4F8A8B] border-[#4F8A8B] text-white"
-                      : "bg-white border-[#8FD3C7] text-[#3B7D7F] hover:bg-[#F6F9F9]"
-                  }`}
+                className={`rounded-2xl border-2 py-4 text-lg font-semibold transition-colors ${
+                  form.role === option.value
+                    ? "border-primary bg-primary text-paper-card dark:text-paper"
+                    : "border-border bg-paper-card text-primary hover:bg-paper dark:text-ink"
+                }`}
               >
                 {option.label}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-sm text-gray-400">
-            Admin accounts aren't self-registered — those are set up separately.
+          <p className="mt-2 text-sm text-ink-soft">
+            Admin accounts aren't self-registered; those are set up separately.
           </p>
         </div>
 
@@ -171,11 +170,11 @@ export default function Register() {
         </div>
       </form>
 
-      <p className="text-center text-base text-gray-500">
+      <p className="text-center text-base text-ink-soft">
         Already have an account?{" "}
         <Link
           to="/login"
-          className="text-[#4F8A8B] font-semibold hover:underline"
+          className="font-semibold text-primary hover:underline dark:text-ink"
         >
           Log in here
         </Link>

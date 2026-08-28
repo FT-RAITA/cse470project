@@ -12,6 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -51,13 +52,16 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-border bg-paper-card">
-      <div className="flex items-center gap-2.5 border-b border-border px-6 py-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-paper-card">
-          <HeartHandshake size={18} strokeWidth={2} />
+      <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-6">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-paper-card dark:text-paper">
+            <HeartHandshake size={18} strokeWidth={2} />
+          </div>
+          <span className="font-display text-lg font-semibold text-primary dark:text-ink">
+            Elder Ease
+          </span>
         </div>
-        <span className="font-display text-lg font-semibold text-primary">
-          Elder Ease
-        </span>
+        <ThemeToggle className="h-9 w-9 shrink-0" />
       </div>
 
       <nav className="flex-1 space-y-1 px-4 py-6">
@@ -68,7 +72,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-primary text-paper-card"
+                  ? "bg-primary text-paper-card dark:text-paper"
                   : "text-ink-soft hover:bg-paper hover:text-ink"
               }`
             }
@@ -81,7 +85,7 @@ export default function Sidebar() {
 
       <div className="border-t border-border px-4 py-5">
         <div className="mb-3 flex items-center gap-3 rounded-lg px-2 py-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft font-display text-sm font-semibold text-primary-dark">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft font-display text-sm font-semibold text-primary-dark dark:text-accent">
             {initials}
           </div>
           <div className="min-w-0">

@@ -19,6 +19,13 @@ export const updateCareMedication = (elderId, medId, data, token) =>
     authHeaders(token)
   );
 
+export const discontinueCareMedication = (elderId, medId, token) =>
+  axios.patch(
+    `${API}/elders/${elderId}/care-meds/${medId}/discontinue`,
+    {},
+    authHeaders(token)
+  );
+
 export const deleteCareMedication = (elderId, medId, token) =>
   axios.delete(
     `${API}/elders/${elderId}/care-meds/${medId}`,

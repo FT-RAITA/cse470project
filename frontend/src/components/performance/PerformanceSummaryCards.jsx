@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Percent,
   Clock3,
-  CalendarCheck,
   Gauge,
 } from "lucide-react";
 
@@ -15,14 +14,13 @@ export default function PerformanceSummaryCards({ summary, loading }) {
     { label: "Tasks Missed", value: summary?.tasksMissed ?? 0, icon: AlertTriangle, tone: "bg-rose-soft text-rose" },
     { label: "Completion Rate", value: `${summary?.completionRate ?? 0}%`, icon: Percent, tone: "bg-sky-100 text-sky-800" },
     { label: "On-Time Completion", value: `${summary?.onTimeRate ?? 0}%`, icon: Clock3, tone: "bg-accent-soft text-primary-dark" },
-    { label: "Shift Attendance", value: `${summary?.attendanceRate ?? 0}%`, icon: CalendarCheck, tone: "bg-primary/10 text-primary" },
     { label: "Performance Score", value: `${summary?.performanceScore ?? 0}/100`, icon: Gauge, tone: "bg-accent-soft text-primary-dark" },
   ];
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
-        {[...Array(7)].map((_, i) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        {[...Array(6)].map((_, i) => (
           <div key={i} className="h-24 animate-pulse rounded-xl border border-border bg-paper-card" />
         ))}
       </div>
@@ -30,7 +28,7 @@ export default function PerformanceSummaryCards({ summary, loading }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
       {cards.map(({ label, value, icon: Icon, tone }) => (
         <div
           key={label}

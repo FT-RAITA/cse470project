@@ -8,7 +8,7 @@ import PerformanceSummaryCards from "../components/performance/PerformanceSummar
 import ScoreRing from "../components/performance/ScoreRing";
 import { PerformanceTrendChart, TaskDistributionChart } from "../components/performance/PerformanceCharts";
 import ActivityTimeline from "../components/performance/ActivityTimeline";
-import ShiftPerformanceCard from "../components/performance/ShiftPerformanceCard";
+import TaskQualityCard from "../components/performance/TaskQualityCard";
 import LeaderboardTable from "../components/performance/LeaderboardTable";
 import CaregiverOfTheWeek from "../components/performance/CaregiverOfTheWeek";
 import BadgesPanel from "../components/performance/BadgesPanel";
@@ -174,7 +174,7 @@ export default function CaregiverPerformanceReport() {
                 <ActivityTimeline activity={dashboard?.activity || []} loading={loading} />
               </div>
               <div className="space-y-5">
-                <ShiftPerformanceCard shifts={dashboard?.shifts} />
+                <TaskQualityCard summary={dashboard?.summary} />
                 <BadgesPanel badges={dashboard?.badges || []} />
               </div>
             </div>
