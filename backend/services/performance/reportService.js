@@ -43,7 +43,6 @@ export const buildHtmlReport = (payload) => {
     periodLabel,
     summary,
     scoreInfo,
-    shifts,
     badges,
     weeklyWinner,
     rank,
@@ -123,35 +122,22 @@ export const buildHtmlReport = (payload) => {
               <th style="padding:12px 0;border-bottom:1px solid #1F4A3F;color:#8BB5A6;text-align:right;">Value</th>
               <th style="padding:12px 0;border-bottom:1px solid #1F4A3F;color:#8BB5A6;text-align:right;">Weight</th>
             </tr>
-            ${row("Task Completion", `${breakdown.taskCompletion ?? 0}%`, `${weights.taskCompletion ?? 40}%`)}
-            ${row("On-Time Completion", `${breakdown.onTimeCompletion ?? 0}%`, `${weights.onTimeCompletion ?? 25}%`)}
-            ${row("Shift Attendance", `${breakdown.shiftAttendance ?? 0}%`, `${weights.shiftAttendance ?? 20}%`)}
+            ${row("Task Completion", `${breakdown.taskCompletion ?? 0}%`, `${weights.taskCompletion ?? 50}%`)}
+            ${row("On-Time Completion", `${breakdown.onTimeCompletion ?? 0}%`, `${weights.onTimeCompletion ?? 35}%`)}
             ${row("Missed Tasks Score", `${breakdown.missedTasks ?? 0}%`, `${weights.missedTasks ?? 15}%`)}
           </table>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
-          <div style="background:#12352D;border:1px solid #1F4A3F;border-radius:18px;padding:22px 24px;">
-            <h2 style="margin:0 0 14px;font-size:18px;color:#3DDC97;">Task Statistics</h2>
-            <table style="width:100%;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
-              ${row("Tasks Assigned", summary?.tasksAssigned ?? 0)}
-              ${row("Tasks Completed", summary?.tasksCompleted ?? 0)}
-              ${row("Tasks Missed", summary?.tasksMissed ?? 0)}
-              ${row("Pending", summary?.tasksPending ?? 0)}
-              ${row("Completion Rate", `${summary?.completionRate ?? 0}%`)}
-              ${row("On-Time Completion", `${summary?.onTimeRate ?? 0}%`)}
-            </table>
-          </div>
-          <div style="background:#12352D;border:1px solid #1F4A3F;border-radius:18px;padding:22px 24px;">
-            <h2 style="margin:0 0 14px;font-size:18px;color:#3DDC97;">Shift Attendance</h2>
-            <table style="width:100%;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
-              ${row("Scheduled Shifts", shifts?.shiftsScheduled ?? 0)}
-              ${row("Completed Shifts", shifts?.shiftsCompleted ?? 0)}
-              ${row("Missed Shifts", shifts?.shiftsMissed ?? 0)}
-              ${row("Late Shifts", shifts?.shiftsLate ?? 0)}
-              ${row("Attendance Rate", `${shifts?.attendanceRate ?? 0}%`)}
-            </table>
-          </div>
+        <div style="background:#12352D;border:1px solid #1F4A3F;border-radius:18px;padding:22px 24px;margin-bottom:18px;">
+          <h2 style="margin:0 0 14px;font-size:18px;color:#3DDC97;">Task Statistics</h2>
+          <table style="width:100%;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
+            ${row("Tasks Assigned", summary?.tasksAssigned ?? 0)}
+            ${row("Tasks Completed", summary?.tasksCompleted ?? 0)}
+            ${row("Tasks Missed", summary?.tasksMissed ?? 0)}
+            ${row("Pending", summary?.tasksPending ?? 0)}
+            ${row("Completion Rate", `${summary?.completionRate ?? 0}%`)}
+            ${row("On-Time Completion", `${summary?.onTimeRate ?? 0}%`)}
+          </table>
         </div>
 
         <div style="background:#12352D;border:1px solid #1F4A3F;border-radius:18px;padding:22px 24px;margin-bottom:8px;">

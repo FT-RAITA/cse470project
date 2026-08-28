@@ -1,33 +1,36 @@
 import { FiHeart } from "react-icons/fi";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function AuthLayout({ title, subtitle, children }) {
   return (
-    <div className="min-h-screen w-full bg-[#F6F9F9] flex items-center justify-center px-4 py-10">
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-paper px-4 py-10">
+      <div className="absolute top-5 right-5">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-md">
-        {/* Brand mark */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 rounded-full bg-[#8FD3C7] flex items-center justify-center mb-3">
-            <FiHeart className="text-[#3B7D7F] text-3xl" />
+        <div className="mb-8 flex flex-col items-center">
+          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
+            <FiHeart className="text-3xl text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-[#3B7D7F]">Elder Ease</h1>
+          <h1 className="font-display text-2xl font-bold text-primary dark:text-ink">
+            Elder Ease
+          </h1>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-lg border border-[#8FD3C7]/40 p-8">
-          <h2 className="text-2xl font-bold text-[#3B7D7F] mb-2 text-center">
+        <div className="rounded-3xl border border-border bg-paper-card p-8 shadow-lg">
+          <h2 className="mb-2 text-center font-display text-2xl font-bold text-primary dark:text-ink">
             {title}
           </h2>
           {subtitle && (
-            <p className="text-base text-gray-500 mb-6 text-center">
-              {subtitle}
-            </p>
+            <p className="mb-6 text-center text-base text-ink-soft">{subtitle}</p>
           )}
 
           {children}
         </div>
 
-        <p className="text-center text-sm text-gray-400 mt-6">
-          Elder Ease — caring made simple
+        <p className="mt-6 text-center text-sm text-ink-soft">
+          Elder Ease: caring made simple
         </p>
       </div>
     </div>

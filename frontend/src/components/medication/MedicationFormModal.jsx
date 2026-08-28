@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../Button";
 import InputField from "../InputField";
@@ -15,7 +15,6 @@ const FREQUENCIES = [
   "Every night",
   "As needed",
 ];
-const STATUSES = ["Active", "Paused", "Completed"];
 
 const empty = {
   name: "",
@@ -24,13 +23,24 @@ const empty = {
   scheduledTimesText: "09:00",
   startDate: new Date().toISOString().slice(0, 10),
   endDate: "",
+  extendEndDate: "",
   instructions: "",
   quantityRemaining: 30,
   quantityUnit: "pills",
   lowStockThreshold: 5,
-  status: "Active",
   notes: "",
 };
+
+function toDateInput(value) {
+  if (!value) return "";
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function addDays(dateStr, days) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 function toForm(med) {
   if (!med) return empty;
@@ -39,19 +49,24 @@ function toForm(med) {
     dosage: med.dosage || "",
     frequency: med.frequency || "Once daily",
     scheduledTimesText: (med.scheduledTimes || []).join(", ") || "09:00",
-    startDate: med.startDate
-      ? new Date(med.startDate).toISOString().slice(0, 10)
-      : "",
-    endDate: med.endDate
-      ? new Date(med.endDate).toISOString().slice(0, 10)
-      : "",
+    startDate: toDateInput(med.startDate),
+    endDate: toDateInput(med.endDate),
+    extendEndDate: "",
     instructions: med.instructions || "",
     quantityRemaining: med.quantityRemaining ?? 30,
     quantityUnit: med.quantityUnit || "pills",
     lowStockThreshold: med.lowStockThreshold ?? 5,
-    status: med.status === "Stopped" ? "Completed" : med.status || "Active",
     notes: med.notes || "",
   };
+}
+
+function formatDisplayDate(value) {
+  if (!value) return "Not set";
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function MedicationFormModal({
@@ -70,6 +85,14 @@ export default function MedicationFormModal({
     setForm(toForm(medication));
   }, [medication]);
 
+  const minExtendDate = useMemo(() => {
+    if (!isEdit) return "";
+    if (form.endDate) return addDays(form.endDate, 1);
+    const today = new Date().toISOString().slice(0, 10);
+    if (form.startDate && form.startDate > today) return form.startDate;
+    return today;
+  }, [isEdit, form.endDate, form.startDate]);
+
   const update = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -81,8 +104,19 @@ export default function MedicationFormModal({
     if (!form.name.trim()) next.name = "Name is required.";
     if (!form.dosage.trim()) next.dosage = "Dosage is required.";
     if (!form.frequency.trim()) next.frequency = "Frequency is required.";
-    if (Number(form.quantityRemaining) < 0)
+    if (Number(form.quantityRemaining) < 0) {
       next.quantityRemaining = "Cannot be negative.";
+    }
+    if (!isEdit) {
+      if (!form.startDate) next.startDate = "Start date is required.";
+      if (form.endDate && form.startDate && form.endDate < form.startDate) {
+        next.endDate = "End date must be on or after start date.";
+      }
+    } else if (form.extendEndDate) {
+      if (minExtendDate && form.extendEndDate < minExtendDate) {
+        next.extendEndDate = "Invalid end date.";
+      }
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -96,28 +130,46 @@ export default function MedicationFormModal({
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const payload = {
-      name: form.name.trim(),
-      dosage: form.dosage.trim(),
-      frequency: form.frequency.trim(),
-      scheduledTimes,
-      startDate: form.startDate || null,
-      endDate: form.endDate || null,
-      instructions: form.instructions.trim(),
-      quantityRemaining: Number(form.quantityRemaining),
-      quantityUnit: form.quantityUnit.trim() || "pills",
-      lowStockThreshold: Number(form.lowStockThreshold),
-      status: form.status,
-      notes: form.notes.trim(),
-    };
-
     setSaving(true);
     try {
       if (isEdit) {
+        const payload = {
+          name: form.name.trim(),
+          dosage: form.dosage.trim(),
+          frequency: form.frequency.trim(),
+          scheduledTimes,
+          instructions: form.instructions.trim(),
+          quantityRemaining: Number(form.quantityRemaining),
+          quantityUnit: form.quantityUnit.trim() || "pills",
+          lowStockThreshold: Number(form.lowStockThreshold),
+          notes: form.notes.trim(),
+        };
+        if (form.extendEndDate) {
+          payload.endDate = form.extendEndDate;
+        }
         await updateCareMedication(elderId, medication._id, payload, token);
-        toast.success("Medication updated");
+        toast.success(
+          form.extendEndDate ? "Medication updated and end date extended" : "Medication updated"
+        );
       } else {
-        await createCareMedication(elderId, payload, token);
+        await createCareMedication(
+          elderId,
+          {
+            name: form.name.trim(),
+            dosage: form.dosage.trim(),
+            frequency: form.frequency.trim(),
+            scheduledTimes,
+            startDate: form.startDate,
+            endDate: form.endDate || null,
+            instructions: form.instructions.trim(),
+            quantityRemaining: Number(form.quantityRemaining),
+            quantityUnit: form.quantityUnit.trim() || "pills",
+            lowStockThreshold: Number(form.lowStockThreshold),
+            status: "Active",
+            notes: form.notes.trim(),
+          },
+          token
+        );
         toast.success("Medication added");
       }
       onSaved?.();
@@ -135,15 +187,39 @@ export default function MedicationFormModal({
         <h3 className="font-display text-lg font-semibold text-ink">
           {isEdit ? "Edit medication" : "Add medication"}
         </h3>
-        <p className="mt-1 text-sm text-ink-soft">
-          Set dosage, schedule times, and inventory for this medicine.
-        </p>
 
         <form onSubmit={submit} className="mt-4 space-y-3" noValidate>
-          <InputField size="md" label="Medicine name" name="name" value={form.name} onChange={update} error={errors.name} required />
+          <InputField
+            size="md"
+            label="Medicine name"
+            name="name"
+            value={form.name}
+            onChange={update}
+            error={errors.name}
+            required
+          />
           <div className="grid grid-cols-2 gap-3">
-            <InputField size="md" label="Dosage" name="dosage" value={form.dosage} onChange={update} error={errors.dosage} placeholder="e.g. 5mg" required />
-            <InputField size="md" label="Frequency" name="frequency" as="select" options={FREQUENCIES} value={form.frequency} onChange={update} error={errors.frequency} required />
+            <InputField
+              size="md"
+              label="Dosage"
+              name="dosage"
+              value={form.dosage}
+              onChange={update}
+              error={errors.dosage}
+              placeholder="e.g. 5mg"
+              required
+            />
+            <InputField
+              size="md"
+              label="Frequency"
+              name="frequency"
+              as="select"
+              options={FREQUENCIES}
+              value={form.frequency}
+              onChange={update}
+              error={errors.frequency}
+              required
+            />
           </div>
           <InputField
             size="md"
@@ -154,20 +230,110 @@ export default function MedicationFormModal({
             placeholder="e.g. 08:00, 20:00"
             mono
           />
-          <div className="grid grid-cols-2 gap-3">
-            <InputField size="md" label="Start date" type="date" name="startDate" value={form.startDate} onChange={update} mono />
-            <InputField size="md" label="End date" type="date" name="endDate" value={form.endDate} onChange={update} mono />
-          </div>
-          <InputField size="md" label="Special instructions" name="instructions" as="textarea" rows={2} value={form.instructions} onChange={update} />
+
+          {!isEdit ? (
+            <div className="grid grid-cols-2 gap-3">
+              <InputField
+                size="md"
+                label="Start date"
+                type="date"
+                name="startDate"
+                value={form.startDate}
+                onChange={update}
+                error={errors.startDate}
+                mono
+                required
+              />
+              <InputField
+                size="md"
+                label="End date"
+                type="date"
+                name="endDate"
+                value={form.endDate}
+                onChange={update}
+                error={errors.endDate}
+                mono
+              />
+            </div>
+          ) : (
+            <div className="space-y-3 rounded-xl border border-border bg-paper p-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
+                    Start date
+                  </p>
+                  <p className="mt-1 font-medium text-ink">
+                    {formatDisplayDate(medication.startDate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
+                    Current end date
+                  </p>
+                  <p className="mt-1 font-medium text-ink">
+                    {formatDisplayDate(medication.endDate)}
+                  </p>
+                </div>
+              </div>
+              <InputField
+                size="md"
+                label="Extend end date"
+                type="date"
+                name="extendEndDate"
+                value={form.extendEndDate}
+                onChange={update}
+                error={errors.extendEndDate}
+                mono
+              />
+            </div>
+          )}
+
+          <InputField
+            size="md"
+            label="Special instructions"
+            name="instructions"
+            as="textarea"
+            rows={2}
+            value={form.instructions}
+            onChange={update}
+          />
           <div className="grid grid-cols-3 gap-3">
-            <InputField size="md" label="Quantity" type="number" name="quantityRemaining" value={form.quantityRemaining} onChange={update} error={errors.quantityRemaining} />
-            <InputField size="md" label="Unit" name="quantityUnit" value={form.quantityUnit} onChange={update} placeholder="pills" />
-            <InputField size="md" label="Low-stock at" type="number" name="lowStockThreshold" value={form.lowStockThreshold} onChange={update} />
+            <InputField
+              size="md"
+              label="Quantity"
+              type="number"
+              name="quantityRemaining"
+              value={form.quantityRemaining}
+              onChange={update}
+              error={errors.quantityRemaining}
+            />
+            <InputField
+              size="md"
+              label="Unit"
+              name="quantityUnit"
+              value={form.quantityUnit}
+              onChange={update}
+              placeholder="pills"
+            />
+            <InputField
+              size="md"
+              label="Low-stock at"
+              type="number"
+              name="lowStockThreshold"
+              value={form.lowStockThreshold}
+              onChange={update}
+            />
           </div>
-          <InputField size="md" label="Status" name="status" as="select" options={STATUSES} value={form.status} onChange={update} />
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" size="md" fullWidth={false} onClick={onClose} disabled={saving}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="md"
+              fullWidth={false}
+              onClick={onClose}
+              disabled={saving}
+            >
               Cancel
             </Button>
             <Button type="submit" size="md" fullWidth={false} loading={saving}>

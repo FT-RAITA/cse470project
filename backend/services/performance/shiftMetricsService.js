@@ -10,7 +10,7 @@ const emptyMetrics = (source = "database") => ({
   shiftsCompleted: 0,
   shiftsMissed: 0,
   shiftsLate: 0,
-  attendanceRate: 100,
+  attendanceRate: 0,
   coverageShifts: 0,
 });
 

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Pencil, Trash2, Package } from "lucide-react";
+import { Pencil, Ban, Package } from "lucide-react";
 import Button from "../Button";
 import InputField from "../InputField";
 import {
-  deleteCareMedication,
+  discontinueCareMedication,
   updateInventory,
 } from "../../services/medicationService";
 
@@ -13,7 +13,26 @@ const statusStyle = {
   Paused: "bg-accent-soft text-primary-dark",
   Completed: "bg-sky-100 text-sky-800",
   Stopped: "bg-paper text-ink-soft border border-border",
+  Discontinued: "bg-paper text-ink-soft border border-border",
 };
+
+function formatCourse(med) {
+  const start = med.startDate
+    ? new Date(med.startDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "—";
+  const end = med.endDate
+    ? new Date(med.endDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Ongoing";
+  return `${start} → ${end}`;
+}
 
 export default function MedicationList({
   medications = [],
@@ -27,7 +46,8 @@ export default function MedicationList({
   const [qty, setQty] = useState(0);
   const [threshold, setThreshold] = useState(5);
   const [saving, setSaving] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmDiscontinue, setConfirmDiscontinue] = useState(null);
+  const [discontinuing, setDiscontinuing] = useState(false);
 
   const openInventory = (med) => {
     setInventoryMed(med);
@@ -54,14 +74,17 @@ export default function MedicationList({
     }
   };
 
-  const remove = async () => {
+  const discontinue = async () => {
+    setDiscontinuing(true);
     try {
-      await deleteCareMedication(elderId, confirmDelete._id, token);
-      toast.success(`${confirmDelete.name} removed`);
-      setConfirmDelete(null);
+      await discontinueCareMedication(elderId, confirmDiscontinue._id, token);
+      toast.success(`${confirmDiscontinue.name} discontinued`);
+      setConfirmDiscontinue(null);
       onChanged?.();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Could not delete");
+      toast.error(err.response?.data?.message || "Could not discontinue");
+    } finally {
+      setDiscontinuing(false);
     }
   };
 
@@ -88,6 +111,10 @@ export default function MedicationList({
           <div className="grid gap-3 p-4 sm:grid-cols-2">
             {medications.map((m) => {
               const low = m.quantityRemaining <= m.lowStockThreshold;
+              const canDiscontinue =
+                m.status === "Active" || m.status === "Paused";
+              const statusLabel =
+                m.status === "Stopped" ? "Discontinued" : m.status;
               return (
                 <div
                   key={m._id}
@@ -105,13 +132,14 @@ export default function MedicationList({
                         statusStyle[m.status] || statusStyle.Active
                       }`}
                     >
-                      {m.status}
+                      {statusLabel}
                     </span>
                   </div>
 
                   <p className="mt-2 font-mono text-xs text-ink-soft">
                     {(m.scheduledTimes || []).join(" · ") || "No times set"}
                   </p>
+                  <p className="mt-1 text-xs text-ink-soft">{formatCourse(m)}</p>
 
                   <div className="mt-3 flex items-center justify-between">
                     <span
@@ -131,22 +159,26 @@ export default function MedicationList({
                       >
                         <Package size={14} />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => onEdit(m)}
-                        className="rounded-md border border-border p-1.5 text-ink-soft hover:bg-paper-card hover:text-ink"
-                        title="Edit"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(m)}
-                        className="rounded-md p-1.5 text-rose hover:bg-rose-soft"
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {canDiscontinue && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(m)}
+                          className="rounded-md border border-border p-1.5 text-ink-soft hover:bg-paper-card hover:text-ink"
+                          title="Edit"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
+                      {canDiscontinue && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDiscontinue(m)}
+                          className="rounded-md p-1.5 text-rose hover:bg-rose-soft"
+                          title="Discontinue"
+                        >
+                          <Ban size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -182,7 +214,12 @@ export default function MedicationList({
               />
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <Button variant="ghost" size="md" fullWidth={false} onClick={() => setInventoryMed(null)}>
+              <Button
+                variant="ghost"
+                size="md"
+                fullWidth={false}
+                onClick={() => setInventoryMed(null)}
+              >
                 Cancel
               </Button>
               <Button size="md" fullWidth={false} loading={saving} onClick={saveInventory}>
@@ -193,21 +230,30 @@ export default function MedicationList({
         </div>
       )}
 
-      {confirmDelete && (
+      {confirmDiscontinue && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-xl border border-border bg-paper-card p-6 shadow-lg">
             <h3 className="font-display text-lg font-semibold text-ink">
-              Remove {confirmDelete.name}?
+              Discontinue {confirmDiscontinue.name}?
             </h3>
-            <p className="mt-1.5 text-sm text-ink-soft">
-              This also deletes its dose history for this medicine.
-            </p>
             <div className="mt-6 flex justify-end gap-2">
-              <Button variant="ghost" size="md" fullWidth={false} onClick={() => setConfirmDelete(null)}>
+              <Button
+                variant="ghost"
+                size="md"
+                fullWidth={false}
+                onClick={() => setConfirmDiscontinue(null)}
+                disabled={discontinuing}
+              >
                 Cancel
               </Button>
-              <Button variant="danger" size="md" fullWidth={false} onClick={remove}>
-                Remove
+              <Button
+                variant="danger"
+                size="md"
+                fullWidth={false}
+                loading={discontinuing}
+                onClick={discontinue}
+              >
+                Discontinue
               </Button>
             </div>
           </div>

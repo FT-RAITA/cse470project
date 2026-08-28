@@ -22,15 +22,15 @@ export default function Button({
 
   const variants = {
     primary:
-      "bg-primary hover:bg-primary-dark text-paper-card focus:ring-accent-soft",
+      "bg-primary hover:bg-primary-dark text-paper-card dark:text-paper focus:ring-accent-soft",
     secondary:
-      "bg-paper-card border-2 border-primary text-primary hover:bg-paper focus:ring-accent-soft",
+      "bg-paper-card border-2 border-primary text-primary hover:bg-paper focus:ring-accent-soft dark:text-ink",
     accent:
-      "bg-accent hover:bg-accent-soft text-primary-dark focus:ring-accent-soft",
+      "bg-accent hover:bg-accent-soft text-primary-dark focus:ring-accent-soft dark:text-paper",
     ghost:
-      "bg-transparent border-2 border-border text-primary hover:bg-paper focus:ring-accent-soft",
+      "bg-transparent border-2 border-border text-primary hover:bg-paper focus:ring-accent-soft dark:text-ink",
     danger:
-      "bg-rose hover:bg-rose/90 text-paper-card focus:ring-rose-soft",
+      "bg-rose hover:bg-rose/90 text-paper-card dark:text-paper focus:ring-rose-soft",
   };
 
   return (

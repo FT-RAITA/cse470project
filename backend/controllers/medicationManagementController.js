@@ -35,7 +35,6 @@ const defaultTimesForFrequency = (frequency = "") => {
   return ["09:00"];
 };
 
-/** Ensure today's Pending dose rows exist for active meds with schedule */
 const ensureTodayDoses = async (elderId, day = new Date()) => {
   const dayStart = startOfDay(day);
   const meds = await Medication.find({ elder: elderId, status: "Active" });
@@ -101,12 +100,15 @@ const validateMedInput = (body, { partial = false } = {}) => {
       errors.push("End date cannot be before start date.");
     }
   }
+  if (!partial && !body.startDate) {
+    errors.push("Start date is required.");
+  }
   if (body.quantityRemaining !== undefined && Number(body.quantityRemaining) < 0) {
     errors.push("Quantity cannot be negative.");
   }
   if (
     body.status &&
-    !["Active", "Completed", "Paused", "Stopped"].includes(body.status)
+    !["Active", "Completed", "Paused", "Stopped", "Discontinued"].includes(body.status)
   ) {
     errors.push("Invalid medication status.");
   }
@@ -274,6 +276,9 @@ export const updateCareMedication = async (req, res) => {
     const elder = await assertElderOwnership(id, req.user.id);
     if (!elder) return res.status(404).json({ message: "Elder not found" });
 
+    const existing = await Medication.findOne({ _id: medId, elder: id });
+    if (!existing) return res.status(404).json({ message: "Medication not found" });
+
     const errors = validateMedInput(req.body, { partial: true });
     if (errors.length) return res.status(400).json({ message: errors[0], errors });
 
@@ -285,18 +290,38 @@ export const updateCareMedication = async (req, res) => {
       "scheduledTimes",
       "instructions",
       "quantityUnit",
-      "status",
       "notes",
     ];
     for (const f of fields) {
       if (req.body[f] !== undefined) updates[f] = req.body[f];
     }
-    if (req.body.startDate !== undefined) {
-      updates.startDate = req.body.startDate ? startOfDay(req.body.startDate) : null;
+
+    if (req.body.status !== undefined) {
+      const allowed = ["Active", "Paused", "Completed", "Discontinued", "Stopped"];
+      if (!allowed.includes(req.body.status)) {
+        return res.status(400).json({ message: "Invalid medication status." });
+      }
+      updates.status = req.body.status === "Stopped" ? "Discontinued" : req.body.status;
     }
-    if (req.body.endDate !== undefined) {
-      updates.endDate = req.body.endDate ? startOfDay(req.body.endDate) : null;
+
+    if (req.body.endDate !== undefined && req.body.endDate) {
+      const newEnd = startOfDay(req.body.endDate);
+      if (existing.startDate && newEnd < startOfDay(existing.startDate)) {
+        return res.status(400).json({
+          message: "End date cannot be before the start date.",
+        });
+      }
+      if (existing.endDate) {
+        const currentEnd = startOfDay(existing.endDate);
+        if (newEnd <= currentEnd) {
+          return res.status(400).json({
+            message: "You can only extend the end date past the current end date.",
+          });
+        }
+      }
+      updates.endDate = newEnd;
     }
+
     if (req.body.quantityRemaining !== undefined) {
       updates.quantityRemaining = Number(req.body.quantityRemaining);
     }
@@ -312,7 +337,6 @@ export const updateCareMedication = async (req, res) => {
       updates,
       { new: true, runValidators: true }
     );
-    if (!med) return res.status(404).json({ message: "Medication not found" });
 
     if (med.status === "Active") await ensureTodayDoses(id);
 
@@ -320,6 +344,47 @@ export const updateCareMedication = async (req, res) => {
       elder: id,
       actor: req.user.id,
       message: `Medication updated: ${med.name}`,
+    });
+
+    res.json(med);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const discontinueCareMedication = async (req, res) => {
+  try {
+    const { id, medId } = req.params;
+    const elder = await assertElderOwnership(id, req.user.id);
+    if (!elder) return res.status(404).json({ message: "Elder not found" });
+
+    const med = await Medication.findOne({ _id: medId, elder: id });
+    if (!med) return res.status(404).json({ message: "Medication not found" });
+
+    if (med.status === "Discontinued" || med.status === "Stopped") {
+      return res.status(400).json({ message: "This medicine is already discontinued." });
+    }
+
+    med.status = "Discontinued";
+    med.updatedBy = req.user.id;
+    if (!med.endDate || startOfDay(med.endDate) > startOfDay()) {
+      med.endDate = startOfDay();
+    }
+    await med.save();
+
+    await MedicationDoseLog.updateMany(
+      {
+        medication: medId,
+        status: "Pending",
+        scheduledDate: { $gte: startOfDay() },
+      },
+      { $set: { status: "Skipped", notes: "Medicine discontinued" } }
+    );
+
+    await logActivity({
+      elder: id,
+      actor: req.user.id,
+      message: `Medication discontinued: ${med.name}`,
     });
 
     res.json(med);
@@ -416,7 +481,6 @@ export const updateDoseStatus = async (req, res) => {
     if (notes !== undefined) dose.notes = notes;
     await dose.save();
 
-    
     if (status === "Taken" && previous !== "Taken") {
       const med = await Medication.findById(dose.medication);
       if (med && med.quantityRemaining > 0) {
@@ -425,7 +489,7 @@ export const updateDoseStatus = async (req, res) => {
         await med.save();
       }
     }
-    
+
     if (previous === "Taken" && status !== "Taken") {
       const med = await Medication.findById(dose.medication);
       if (med) {

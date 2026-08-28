@@ -1,6 +1,6 @@
 import ShiftCoverage from "../../models/shiftCoverage.js";
 import { SEED_ACTIVITIES, SEED_TREND, findSeedByKey, findSeedByName, SEED_TEAM } from "./seedData.js";
-import { calculatePerformanceScore } from "./scoreCalculator.js";
+import { calculatePerformanceScore, pct } from "./scoreCalculator.js";
 
 const formatTime = (d) => {
   const dt = new Date(d);
@@ -112,18 +112,18 @@ export const getCaregiverTrend = (caregiverId, caregiverName = "", rawTasks = []
     return [...buckets.values()]
       .sort((a, b) => a.sort - b.sort)
       .map((b) => {
+        const completion = pct(b.completed, b.assigned);
+        const onTime = pct(b.onTime, Math.max(b.completed, 1));
         const { score } = calculatePerformanceScore({
           tasksAssigned: b.assigned,
           tasksCompleted: b.completed,
           tasksMissed: b.missed,
           onTimeCompleted: b.onTime,
-          shiftsScheduled: 0,
-          shiftsCompleted: 0,
         });
         return {
           label: b.label,
-          completed: b.completed,
-          missed: b.missed,
+          completion,
+          onTime,
           score,
         };
       });

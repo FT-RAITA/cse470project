@@ -1,6 +1,5 @@
 import User from "../models/user.js";
 import { resolveRange, getCaregiverTaskMetrics } from "../services/performance/taskMetricsService.js";
-import { getCaregiverShiftMetrics } from "../services/performance/shiftMetricsService.js";
 import { getCaregiverActivity, getCaregiverTrend } from "../services/performance/activityService.js";
 import { calculatePerformanceScore, deriveBadges } from "../services/performance/scoreCalculator.js";
 import { buildLeaderboard } from "../services/performance/leaderboardService.js";
@@ -47,16 +46,11 @@ const resolveTargetCaregiver = async (req) => {
 const assembleProfile = async (caregiver, period) => {
   const range = resolveRange(period);
   const tasks = await getCaregiverTaskMetrics(caregiver.id, range, caregiver.name);
-  const shifts = await getCaregiverShiftMetrics(caregiver.id, range, caregiver.name);
   const scoreInfo = calculatePerformanceScore({
     tasksAssigned: tasks.tasksAssigned,
     tasksCompleted: tasks.tasksCompleted,
     tasksMissed: tasks.tasksMissed,
     onTimeCompleted: tasks.onTimeCompleted,
-    shiftsScheduled: shifts.shiftsScheduled,
-    shiftsCompleted: shifts.shiftsCompleted,
-    shiftsMissed: shifts.shiftsMissed,
-    attendanceRate: shifts.attendanceRate,
   });
 
   const { leaderboard, weeklyWinner } = await buildLeaderboard(period, {
@@ -73,10 +67,8 @@ const assembleProfile = async (caregiver, period) => {
     score: scoreInfo.score,
     tasksMissed: tasks.tasksMissed,
     onTimeRate: tasks.onTimeRate,
-    attendanceRate: shifts.attendanceRate,
     isWeeklyWinner: !!isWeeklyWinner,
     tasksAssigned: tasks.tasksAssigned,
-    shiftsScheduled: shifts.shiftsScheduled,
   });
 
   const activity = await getCaregiverActivity(caregiver.id, caregiver.name, tasks.rawTasks);
@@ -98,12 +90,10 @@ const assembleProfile = async (caregiver, period) => {
       tasksCancelled: tasks.tasksCancelled,
       completionRate: tasks.completionRate,
       onTimeRate: tasks.onTimeRate,
-      attendanceRate: shifts.attendanceRate,
       performanceScore: scoreInfo.score,
       performanceLevel: scoreInfo.level,
     },
     scoreInfo,
-    shifts,
     taskDistribution: {
       completed: tasks.tasksCompleted,
       pending: tasks.tasksPending,
@@ -117,7 +107,6 @@ const assembleProfile = async (caregiver, period) => {
     weeklyWinner,
     sources: {
       tasks: tasks.source,
-      shifts: shifts.source,
     },
   };
 };
@@ -161,7 +150,7 @@ export const getLeaderboard = async (req, res) => {
       caregiverId: e.caregiverId,
       name: e.name,
       completionRate: e.completionRate,
-      attendanceRate: e.attendanceRate,
+      onTimeRate: e.onTimeRate,
       score: e.score,
       level: e.level,
       badges: e.badges,
@@ -178,7 +167,7 @@ export const getLeaderboard = async (req, res) => {
             score: data.weeklyWinner.score,
             level: data.weeklyWinner.level,
             completionRate: data.weeklyWinner.completionRate,
-            attendanceRate: data.weeklyWinner.attendanceRate,
+            onTimeRate: data.weeklyWinner.onTimeRate,
           }
         : null,
     });
@@ -244,7 +233,6 @@ export const downloadPerformanceReport = async (req, res) => {
       periodLabel: profile.periodLabel,
       summary: profile.summary,
       scoreInfo: profile.scoreInfo,
-      shifts: profile.shifts,
       badges: profile.badges,
       weeklyWinner: profile.weeklyWinner,
       rank: profile.rank,

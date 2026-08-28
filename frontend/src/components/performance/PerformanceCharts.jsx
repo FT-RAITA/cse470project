@@ -31,11 +31,11 @@ export function PerformanceTrendChart({ trend = [] }) {
           <LineChart data={trend}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E4DFCF" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="#5C6B65" />
-            <YAxis tick={{ fontSize: 11 }} stroke="#5C6B65" />
+            <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="#5C6B65" />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="completed" name="Completed" stroke="#24463F" strokeWidth={2} />
-            <Line type="monotone" dataKey="missed" name="Missed" stroke="#B5544A" strokeWidth={2} />
+            <Line type="monotone" dataKey="completion" name="Completion %" stroke="#3DDC97" strokeWidth={2} />
+            <Line type="monotone" dataKey="onTime" name="On-Time %" stroke="#6BA3D6" strokeWidth={2} />
             <Line type="monotone" dataKey="score" name="Score" stroke="#C99A3C" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>

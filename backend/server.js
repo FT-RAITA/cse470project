@@ -24,6 +24,7 @@ import { startCaregiverScheduleScheduler } from "./services/caregiverScheduleSer
 import messageRoutes from "./routes/messageRoutes.js";
 import caregiverPerformanceRoutes from "./routes/caregiverPerformanceRoutes.js";
 import dailyRoutineRoutes from "./routes/dailyRoutineRoutes.js";
+import wellnessProgressRoutes from "./routes/wellnessProgressRoutes.js";
 import { connectDB } from "./config/db.js";
 import { Server } from "socket.io";
 import { initializeSocket } from "./socket/socket.js";
@@ -63,7 +64,7 @@ app.use("/api/caregiver-swap-requests", caregiverSwapRequestRoutes);
 app.use("/api", doctorAppointmentRoutes);
 app.use("/api", caregiverPerformanceRoutes);
 app.use("/api", dailyRoutineRoutes);
-
+app.use("/api", wellnessProgressRoutes);
 
 
 app.get("/", (req, res) => {

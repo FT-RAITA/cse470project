@@ -272,7 +272,7 @@ export const createMedicalRecord = async (req, res) => {
       category,
       title: title.trim(),
       description: description?.trim() || "",
-      status: status || "Active",
+      status: status || (["Allergy", "Diagnosis"].includes(category) ? "Active" : "Logged"),
       bpSystolic: bpSystolic ? Number(bpSystolic) : undefined,
       bpDiastolic: bpDiastolic ? Number(bpDiastolic) : undefined,
       weight: weight ? Number(weight) : undefined,
@@ -320,14 +320,21 @@ export const updateMedicalRecord = async (req, res) => {
     const elder = await assertElderOwnership(id, req.user.id);
     if (!elder) return res.status(404).json({ message: "Elder not found" });
 
+    const updates = { updatedBy: req.user.id };
+    if (req.body.category !== undefined) updates.category = req.body.category;
+    if (req.body.title !== undefined) updates.title = String(req.body.title).trim();
+    if (req.body.description !== undefined) {
+      updates.description = String(req.body.description).trim();
+    }
+    if (req.body.status !== undefined) updates.status = req.body.status;
+    if (req.body.bpSystolic !== undefined) updates.bpSystolic = req.body.bpSystolic;
+    if (req.body.bpDiastolic !== undefined) updates.bpDiastolic = req.body.bpDiastolic;
+    if (req.body.weight !== undefined) updates.weight = req.body.weight;
+    if (req.body.recordedAt !== undefined) updates.recordedAt = req.body.recordedAt;
+
     const record = await MedicalRecord.findOneAndUpdate(
       { _id: recordId, elder: id },
-      {
-        ...req.body,
-        updatedBy: req.user.id,
-        title: req.body.title?.trim(),
-        description: req.body.description?.trim(),
-      },
+      updates,
       { new: true, runValidators: true }
     ).populate("updatedBy", "name");
 

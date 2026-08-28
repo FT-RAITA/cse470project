@@ -3,68 +3,47 @@ export const pct = (part, whole) => {
   return Math.round((part / whole) * 1000) / 10;
 };
 
+const WEIGHTS = {
+  taskCompletion: 50,
+  onTimeCompletion: 35,
+  missedTasks: 15,
+};
+
 export const calculatePerformanceScore = ({
   tasksAssigned = 0,
   tasksCompleted = 0,
   tasksMissed = 0,
   onTimeCompleted = 0,
-  shiftsScheduled = 0,
-  shiftsCompleted = 0,
-  shiftsMissed = 0,
-  attendanceRate: attendanceOverride,
 }) => {
   const hasTasks = tasksAssigned > 0;
-  const hasShifts = shiftsScheduled > 0;
 
   const completionRate = hasTasks ? pct(tasksCompleted, tasksAssigned) : 0;
-  const onTimeRate = hasTasks
-    ? tasksCompleted > 0
-      ? pct(onTimeCompleted, tasksCompleted)
-      : 0
-    : 0;
-  const missedPenaltyRate = hasTasks ? Math.max(0, 100 - pct(tasksMissed, tasksAssigned)) : 0;
+  const onTimeRate =
+    hasTasks && tasksCompleted > 0 ? pct(onTimeCompleted, tasksCompleted) : 0;
 
-  const pastShifts = shiftsCompleted + shiftsMissed;
-  const attendanceRate = hasShifts
-    ? typeof attendanceOverride === "number"
-      ? attendanceOverride
-      : pastShifts > 0
-        ? pct(shiftsCompleted, pastShifts)
-        : 100
-    : 0;
+  const workedTasks = tasksCompleted + tasksMissed;
+  const missedPenaltyRate =
+    hasTasks && workedTasks > 0
+      ? Math.max(0, 100 - pct(tasksMissed, tasksAssigned))
+      : 0;
 
-  if (!hasTasks && !hasShifts) {
+  if (!hasTasks) {
     return {
       score: 0,
       level: "No activity",
       breakdown: {
         taskCompletion: 0,
         onTimeCompletion: 0,
-        shiftAttendance: 0,
         missedTasks: 0,
       },
-      weights: {
-        taskCompletion: 40,
-        onTimeCompletion: 25,
-        shiftAttendance: 20,
-        missedTasks: 15,
-      },
+      weights: { ...WEIGHTS },
     };
   }
 
-  const parts = [];
-  if (hasTasks) {
-    parts.push({ value: completionRate, weight: 40 });
-    parts.push({ value: onTimeRate, weight: 25 });
-    parts.push({ value: missedPenaltyRate, weight: 15 });
-  }
-  if (hasShifts) {
-    parts.push({ value: attendanceRate, weight: 20 });
-  }
-
-  const totalWeight = parts.reduce((sum, part) => sum + part.weight, 0);
   const score = Math.round(
-    parts.reduce((sum, part) => sum + part.value * (part.weight / totalWeight), 0)
+    completionRate * (WEIGHTS.taskCompletion / 100) +
+      onTimeRate * (WEIGHTS.onTimeCompletion / 100) +
+      missedPenaltyRate * (WEIGHTS.missedTasks / 100)
   );
 
   let level = "Needs Improvement";
@@ -77,15 +56,9 @@ export const calculatePerformanceScore = ({
     breakdown: {
       taskCompletion: completionRate,
       onTimeCompletion: onTimeRate,
-      shiftAttendance: attendanceRate,
       missedTasks: missedPenaltyRate,
     },
-    weights: {
-      taskCompletion: 40,
-      onTimeCompletion: 25,
-      shiftAttendance: 20,
-      missedTasks: 15,
-    },
+    weights: { ...WEIGHTS },
   };
 };
 
@@ -93,27 +66,21 @@ export const deriveBadges = ({
   score,
   tasksMissed,
   onTimeRate,
-  attendanceRate,
   isWeeklyWinner,
   tasksAssigned = 0,
-  shiftsScheduled = 0,
 }) => {
-  const hasWork = tasksAssigned > 0 || shiftsScheduled > 0;
   const badges = [];
-  if (isWeeklyWinner && hasWork) {
+  if (isWeeklyWinner && tasksAssigned > 0) {
     badges.push({ id: "cotw", label: "Caregiver of the Week", icon: "trophy" });
   }
-  if (hasWork && score >= 90) {
+  if (tasksAssigned > 0 && score >= 90) {
     badges.push({ id: "excellence", label: "Excellence", icon: "star" });
   }
-  if (tasksAssigned > 0 && tasksMissed === 0) {
+  if (tasksAssigned > 0 && tasksMissed === 0 && score > 0) {
     badges.push({ id: "perfect", label: "Perfect Week", icon: "target" });
   }
   if (tasksAssigned > 0 && onTimeRate >= 95) {
     badges.push({ id: "ontime", label: "On-Time Champion", icon: "clock" });
-  }
-  if (shiftsScheduled > 0 && attendanceRate >= 95 && score >= 85) {
-    badges.push({ id: "care", label: "Outstanding Care", icon: "heart" });
   }
   return badges;
 };

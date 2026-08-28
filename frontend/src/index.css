@@ -1,34 +1,73 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --color-paper: #F3F1E6;
-  --color-paper-card: #FFFDF7;
-  --color-ink: #1E2A26;
-  --color-ink-soft: #5C6B65;
-  --color-primary: #24463F;
-  --color-primary-light: #3E6B5F;
-  --color-primary-dark: #16302A;
-  --color-accent: #C99A3C;
-  --color-accent-soft: #E9D5A6;
-  --color-rose: #B5544A;
-  --color-rose-soft: #F1DAD6;
-  --color-border: #E4DFCF;
+  --color-paper: var(--ee-paper);
+  --color-paper-card: var(--ee-paper-card);
+  --color-ink: var(--ee-ink);
+  --color-ink-soft: var(--ee-ink-soft);
+  --color-primary: var(--ee-primary);
+  --color-primary-light: var(--ee-primary-light);
+  --color-primary-dark: var(--ee-primary-dark);
+  --color-accent: var(--ee-accent);
+  --color-accent-soft: var(--ee-accent-soft);
+  --color-rose: var(--ee-rose);
+  --color-rose-soft: var(--ee-rose-soft);
+  --color-border: var(--ee-border);
 
   --font-display: "Fraunces", serif;
   --font-body: "Plus Jakarta Sans", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 }
 
+:root {
+  --ee-paper: #F3F1E6;
+  --ee-paper-card: #FFFDF7;
+  --ee-ink: #1E2A26;
+  --ee-ink-soft: #5C6B65;
+  --ee-primary: #24463F;
+  --ee-primary-light: #3E6B5F;
+  --ee-primary-dark: #16302A;
+  --ee-accent: #C99A3C;
+  --ee-accent-soft: #E9D5A6;
+  --ee-rose: #B5544A;
+  --ee-rose-soft: #F1DAD6;
+  --ee-border: #E4DFCF;
+  --ee-dot: rgba(30, 42, 38, 0.05);
+}
+
+html.dark {
+  --ee-paper: #070e0c;
+  --ee-paper-card: #101a17;
+  --ee-ink: #E8F7F0;
+  --ee-ink-soft: #8FB9A8;
+  --ee-primary: #3DDC97;
+  --ee-primary-light: #63E8AF;
+  --ee-primary-dark: #2BB87A;
+  --ee-accent: #E0B35C;
+  --ee-accent-soft: #3A3220;
+  --ee-rose: #E07A70;
+  --ee-rose-soft: #3A2220;
+  --ee-border: #1E2E28;
+  --ee-dot: rgba(61, 220, 151, 0.1);
+}
+
 html {
   font-family: var(--font-body);
   color: var(--color-ink);
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
   background-color: var(--color-paper);
   background-image:
-    radial-gradient(circle at 1px 1px, rgba(30,42,38,0.05) 1px, transparent 0);
+    radial-gradient(circle at 1px 1px, var(--ee-dot) 1px, transparent 0);
   background-size: 24px 24px;
 }
 
