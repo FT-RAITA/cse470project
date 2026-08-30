@@ -1,7 +1,7 @@
 import Emergency from "../models/Emergency.js";
 import Hospital from "../models/Hospital.js";
 import Elder from "../models/elder.js";
-import Notification from "../models/Notification.js";
+import { createNotification } from "../services/notificationService.js";
 
 // ---------------------------------------------
 // Calculate distance between two coordinates
@@ -117,12 +117,19 @@ export const createEmergency = async (req, res) => {
     for (const familyMember of elder.familyMembers || []) {
       if (!familyMember.user?._id) continue;
 
-      await Notification.create({
+      await createNotification({
         recipient: familyMember.user._id,
         elder: elder._id,
         emergency: emergency._id,
         type: "emergency",
+        severity: "critical",
+        title: "Emergency SOS",
         message: `Emergency SOS has been activated for ${elder.fullName}.`,
+        relatedType: "Emergency",
+        relatedId: emergency._id,
+        actionUrl: `/family/elders/${elder._id}`,
+        actionLabel: "View elder",
+        dedupeKey: `emergency-${emergency._id}`,
       });
     }
 

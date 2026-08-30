@@ -20,8 +20,9 @@ export default function CargiverDashboard() {
   const [checkinElder, setCheckinElder] = useState(null);
 
   useEffect(() => {
+    if (!token) return;
     fetchElders();
-  }, []);
+  }, [token]);
 
   const fetchElders = async () => {
     try {

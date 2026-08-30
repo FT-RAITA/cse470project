@@ -1,6 +1,7 @@
 import DoctorAppointment from "../models/DoctorAppointment.js";
 import Elder from "../models/elder.js";
 import { autoCompleteRelatedTask } from "./taskController.js";
+import { createNotification } from "../services/notificationService.js";
 
 const findOwnedElder = (elderId, caregiverId) =>
   Elder.findOne({ _id: elderId, caregiver: caregiverId }).select("_id fullName elderID");
@@ -110,6 +111,21 @@ export const updateDoctorAppointmentStatus = async (req, res) => {
 
     appointment.status = status;
     await appointment.save();
+    if (status === "Cancelled") {
+      await createNotification({
+        recipient: req.user.id,
+        elder: elder._id,
+        type: "doctor_appointment",
+        severity: "warning",
+        title: "Doctor appointment cancelled",
+        message: `Dr. ${appointment.doctorName} appointment for ${elder.fullName} was cancelled.`,
+        relatedType: "DoctorAppointment",
+        relatedId: appointment._id,
+        actionUrl: "/doctor-appointments",
+        actionLabel: "Open appointments",
+        dedupeKey: `doctor-${appointment._id}-cancelled`,
+      });
+    }
      if (status === "Completed") {
       await autoCompleteRelatedTask("DoctorAppointment", appointment._id);
     }

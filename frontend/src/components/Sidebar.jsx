@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ThemeToggle from "./ThemeToggle";
+import NotificationBell from "./notifications/NotificationBell";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -61,7 +62,7 @@ export default function Sidebar() {
             Elder Ease
           </span>
         </div>
-        <ThemeToggle className="h-9 w-9 shrink-0" />
+        <div className="flex items-center gap-1"><NotificationBell /><ThemeToggle className="h-9 w-9 shrink-0" /></div>
       </div>
 
       <nav className="flex-1 space-y-1 px-4 py-6">

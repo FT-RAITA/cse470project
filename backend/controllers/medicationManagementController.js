@@ -2,6 +2,7 @@ import Elder from "../models/elder.js";
 import Medication from "../models/medication.js";
 import MedicationDoseLog from "../models/medicationDoseLog.js";
 import HealthActivity from "../models/healthActivity.js";
+import { createNotification } from "../services/notificationService.js";
 
 const assertElderOwnership = async (elderId, caregiverId) =>
   Elder.findOne({ _id: elderId, caregiver: caregiverId });
@@ -475,6 +476,8 @@ export const updateDoseStatus = async (req, res) => {
     if (!dose) return res.status(404).json({ message: "Dose not found" });
 
     const previous = dose.status;
+    const beforeMed = await Medication.findById(dose.medication);
+    const beforeQty = beforeMed?.quantityRemaining;
     dose.status = status;
     dose.markedAt = status === "Pending" ? null : new Date();
     dose.markedBy = status === "Pending" ? null : req.user.id;
@@ -503,6 +506,26 @@ export const updateDoseStatus = async (req, res) => {
       .populate("medication", "name dosage quantityRemaining lowStockThreshold quantityUnit status")
       .populate("markedBy", "name");
 
+    if (status === "Missed" && previous !== "Missed" && populated?.medication) {
+      await createNotification({
+        recipient: req.user.id, elder: id, type: "medication", severity: "warning",
+        title: "Medication missed",
+        message: `A scheduled dose of ${populated.medication.name} was marked missed for ${elder.fullName}.`,
+        relatedType: "MedicationDoseLog", relatedId: dose._id,
+        actionUrl: `/elders/${id}/medications`, actionLabel: "Open medications",
+        dedupeKey: `medication-${dose._id}-missed`,
+      });
+    }
+    if (status === "Taken" && previous !== "Taken" && populated?.medication && beforeQty != null) {
+      const med = populated.medication;
+      if (beforeQty > med.lowStockThreshold && med.quantityRemaining <= med.lowStockThreshold) {
+        await createNotification({ recipient:req.user.id, elder:id, type:"medication", severity:"warning", title:"Low medication stock", message:`Low stock: only ${med.quantityRemaining} ${med.quantityUnit} of ${med.name} remain for ${elder.fullName}.`, relatedType:"Medication", relatedId:med._id, actionUrl:`/elders/${id}/medications`, actionLabel:"Open inventory", dedupeKey:`medication-${med._id}-low-stock-${med.quantityRemaining}` });
+      }
+      if (beforeQty > 0 && med.quantityRemaining === 0) {
+        await createNotification({ recipient:req.user.id, elder:id, type:"medication", severity:"critical", title:"Medication out of stock", message:`${med.name} is out of stock for ${elder.fullName}.`, relatedType:"Medication", relatedId:med._id, actionUrl:`/elders/${id}/medications`, actionLabel:"Open inventory", dedupeKey:`medication-${med._id}-out-of-stock` });
+      }
+    }
+
     res.json({
       message: `Dose marked as ${status}`,
       dose: populated,
@@ -522,6 +545,11 @@ export const updateInventory = async (req, res) => {
     if (quantityRemaining === undefined || Number(quantityRemaining) < 0) {
       return res.status(400).json({ message: "Valid quantity is required." });
     }
+
+    const existingMed = await Medication.findOne({ _id: medId, elder: id });
+    if (!existingMed) return res.status(404).json({ message: "Medication not found" });
+    const previousQuantity = existingMed.quantityRemaining;
+    const previousThreshold = existingMed.lowStockThreshold;
 
     const updates = {
       quantityRemaining: Number(quantityRemaining),
@@ -544,6 +572,14 @@ export const updateInventory = async (req, res) => {
       actor: req.user.id,
       message: `Inventory updated for ${med.name}: ${med.quantityRemaining} ${med.quantityUnit}`,
     });
+
+    const threshold = med.lowStockThreshold;
+    if (previousQuantity > previousThreshold && med.quantityRemaining <= threshold) {
+      await createNotification({ recipient:req.user.id, elder:id, type:"medication", severity:"warning", title:"Low medication stock", message:`Low stock: only ${med.quantityRemaining} ${med.quantityUnit} of ${med.name} remain for ${elder.fullName}.`, relatedType:"Medication", relatedId:med._id, actionUrl:`/elders/${id}/medications`, actionLabel:"Open inventory", dedupeKey:`medication-${med._id}-low-stock-${med.quantityRemaining}` });
+    }
+    if (previousQuantity > 0 && med.quantityRemaining === 0) {
+      await createNotification({ recipient:req.user.id, elder:id, type:"medication", severity:"critical", title:"Medication out of stock", message:`${med.name} is out of stock for ${elder.fullName}.`, relatedType:"Medication", relatedId:med._id, actionUrl:`/elders/${id}/medications`, actionLabel:"Open inventory", dedupeKey:`medication-${med._id}-out-of-stock` });
+    }
 
     res.json(med);
   } catch (error) {

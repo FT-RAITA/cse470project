@@ -13,7 +13,10 @@ const api = axios.create({
 // Attach token automatically if one exists.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
+
+  // Keep an explicitly supplied Authorization header. During fresh-login
+  // verification localStorage can still contain an older token.
+  if (token && !config.headers?.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -26,6 +29,23 @@ export const loginUser = async (credentials) => {
 
 export const registerUser = async (userInfo) => {
   const { data } = await api.post("/register", userInfo);
+  return data;
+};
+
+export const verifyAuthToken = async (token) => {
+  const cleanToken = String(token || "")
+    .trim()
+    .replace(/^Bearer\s+/i, "")
+    .replace(/^"(.*)"$/, "$1")
+    .trim();
+
+  if (!cleanToken) {
+    throw new Error("Login did not return an authentication token.");
+  }
+
+  const { data } = await api.get("/protected", {
+    headers: { Authorization: `Bearer ${cleanToken}` },
+  });
   return data;
 };
 

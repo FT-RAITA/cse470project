@@ -1,5 +1,6 @@
 import Appointment from "../models/appointment.js";
 import Elder from "../models/elder.js";
+import { createNotification } from "../services/notificationService.js";
 
 export const TIME_SLOTS = [
   "09:00",
@@ -240,6 +241,20 @@ export const createAppointment = async (req, res) => {
     const populated = await populateAppointment(Appointment.findById(appointment._id));
     const badge = await getVisitorBadge(req.user.id);
 
+    await createNotification({
+      recipient: elder.caregiver,
+      elder: elder._id,
+      type: "visitor",
+      severity: "info",
+      title: "New visitor request",
+      message: `${req.user.name || "A family member"} requested a visit with ${elder.fullName} on ${appointmentDateTime.toLocaleString()}.`,
+      relatedType: "Appointment",
+      relatedId: appointment._id,
+      actionUrl: "/appointments",
+      actionLabel: "Review request",
+      dedupeKey: `visitor-${appointment._id}-requested`,
+    });
+
     res.status(201).json({
       message: "Appointment request submitted. Waiting for caregiver approval.",
       appointment: populated,
@@ -440,6 +455,42 @@ export const updateAppointmentStatus = async (req, res) => {
 
     appointment.status = status;
     await appointment.save();
+
+    if (["Approved", "Rejected", "Cancelled"].includes(status)) {
+      const visitorMessages = {
+        Approved: `Your visit with ${appointment.elder.fullName} has been approved.`,
+        Rejected: `Your visit request with ${appointment.elder.fullName} was declined.`,
+        Cancelled: `Your visit with ${appointment.elder.fullName} was cancelled.`,
+      };
+      await createNotification({
+        recipient: appointment.visitor,
+        elder: appointment.elder._id,
+        type: "visitor",
+        severity: status === "Rejected" ? "warning" : "info",
+        title: `Visit ${status.toLowerCase()}`,
+        message: visitorMessages[status],
+        relatedType: "Appointment",
+        relatedId: appointment._id,
+        actionUrl: "/appointments",
+        actionLabel: "Open visit",
+        dedupeKey: `visitor-${appointment._id}-status-${status.toLowerCase()}`,
+      });
+      if (status === "Cancelled" && !isCaregiver) {
+        await createNotification({
+          recipient: appointment.elder.caregiver,
+          elder: appointment.elder._id,
+          type: "visitor",
+          severity: "info",
+          title: "Visit cancelled",
+          message: `A visitor cancelled their visit with ${appointment.elder.fullName}.`,
+          relatedType: "Appointment",
+          relatedId: appointment._id,
+          actionUrl: "/appointments",
+          actionLabel: "Open visits",
+          dedupeKey: `visitor-${appointment._id}-cancelled-caregiver`,
+        });
+      }
+    }
 
     const populated = await populateAppointment(
       Appointment.findById(appointment._id)

@@ -15,6 +15,7 @@ import {
 import Button from "../components/Button";
 import InputField from "../components/InputField";
 import ThemeToggle from "../components/ThemeToggle";
+import { socket } from "../services/socket";
 import { useAuth } from "../context/AuthContext";
 
 import {
@@ -25,6 +26,7 @@ import {
 import {
   getMyNotifications,
   markNotificationAsRead,
+  markAllNotificationsAsRead,
 } from "../services/notificationService";
 
 
@@ -168,6 +170,19 @@ export default function FamilyDashboard() {
     return () => clearInterval(interval);
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+    const handleNewNotification = (notification) => {
+      setNotifications((prev) =>
+        prev.some((item) => item._id === notification._id)
+          ? prev
+          : [notification, ...prev]
+      );
+    };
+    socket.on("notification:new", handleNewNotification);
+    return () => socket.off("notification:new", handleNewNotification);
+  }, [token]);
+
 
   // -----------------------------------
   // Count unread notifications
@@ -203,6 +218,16 @@ export default function FamilyDashboard() {
         "markNotificationAsRead error:",
         err.response?.data || err
       );
+    }
+  };
+
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsAsRead(token);
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true, readAt: new Date().toISOString() })));
+    } catch (err) {
+      console.error("markAllNotificationsAsRead error:", err.response?.data || err);
     }
   };
 
@@ -388,10 +413,14 @@ export default function FamilyDashboard() {
                       </p>
                     </div>
 
-                    <Bell
-                      size={16}
-                      className="text-ink-soft"
-                    />
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <button type="button" onClick={handleMarkAllRead} className="text-xs font-medium text-primary hover:underline">
+                          Mark all read
+                        </button>
+                      )}
+                      <Bell size={16} className="text-ink-soft" />
+                    </div>
 
                   </div>
 

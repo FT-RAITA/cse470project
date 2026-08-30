@@ -12,6 +12,7 @@ import {
   User,
   Mail,
   MessageCircle,
+  LayoutGrid,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Button from "../components/Button";
@@ -108,7 +109,16 @@ export default function FamilyElderView() {
               </div>
             </div>
 
-            <div className="flex gap-2.5">
+            <div className="flex flex-wrap gap-2.5">
+              <Button
+                variant="primary"
+                icon={LayoutGrid}
+                size="md"
+                fullWidth={false}
+                onClick={() => navigate(`/elders/${id}/dashboard`)}
+              >
+                Health Dashboard
+              </Button>
               <Button
                 variant="accent"
                 icon={Smile}

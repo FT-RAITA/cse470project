@@ -7,7 +7,6 @@ import { getMessages, sendMessage } from "../services/messageService";
 import {
   socket,
   connectSocket,
-  disconnectSocket,
 } from "../services/socket";
 
 function resolveOtherUserId(elder, user) {
@@ -67,11 +66,10 @@ export default function Chat({ elder }) {
       });
     };
 
-    socket.on("newMessage", handleNewMessage);
+    socket.on("new_message", handleNewMessage);
 
     return () => {
-      socket.off("newMessage", handleNewMessage);
-      disconnectSocket();
+      socket.off("new_message", handleNewMessage);
     };
   }, [elderId, otherUserId, token]);
 

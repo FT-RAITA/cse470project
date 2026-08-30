@@ -25,9 +25,12 @@ import messageRoutes from "./routes/messageRoutes.js";
 import caregiverPerformanceRoutes from "./routes/caregiverPerformanceRoutes.js";
 import dailyRoutineRoutes from "./routes/dailyRoutineRoutes.js";
 import wellnessProgressRoutes from "./routes/wellnessProgressRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import { connectDB } from "./config/db.js";
 import { Server } from "socket.io";
 import { initializeSocket } from "./socket/socket.js";
+import { setNotificationSocketServer } from "./services/notificationService.js";
+import { startNotificationScheduler } from "./services/notificationScheduler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,6 +49,12 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
+
+// Dashboard routes must be registered before the broad /api routers below.
+// Several legacy feature routers use router.use(authMiddleware), so unmatched
+// requests can otherwise be re-authenticated by unrelated routers.
+app.use("/api", dashboardRoutes);
+
 app.use("/api/family", familyRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/emergency", emergencyRoutes);
@@ -85,7 +94,9 @@ const io = new Server(server, {
 app.set("io", io);
 
 initializeSocket(io);
+setNotificationSocketServer(io);
 startCaregiverScheduleScheduler();
+startNotificationScheduler();
 
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

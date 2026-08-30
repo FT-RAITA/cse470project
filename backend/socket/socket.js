@@ -75,6 +75,8 @@ export const initializeSocket = (io) => {
       `Socket connected: ${socket.user.name}`
     );
 
+    socket.join(`user:${socket.user._id}`);
+
     // ----------------------------------------------
     // Join a conversation
     // ----------------------------------------------

@@ -21,6 +21,7 @@ import ChatPage from "../pages/ChatPage";
 import CaregiverPerformanceReport from "../pages/CaregiverPerformanceReport";
 import DailyRoutine from "../pages/dailyRoutine";
 import WellnessProgress from "../pages/WellnessProgress";
+import ElderHealthDashboard from "../pages/ElderHealthDashboard";
 
 export default function AppRoutes() {
   return (
@@ -34,6 +35,7 @@ export default function AppRoutes() {
         <Route path="/dashboard" element={<CaregiverDashboard />} />
         <Route path="/elders/add" element={<AddElder />} />
         <Route path="/elders/:id" element={<ElderProfile />} />
+        <Route path="/elders/:id/dashboard" element={<ElderHealthDashboard />} />
         <Route path="/elders/:id/edit" element={<EditElder />} />
         <Route path="/elders/:id/records" element={<ElderRecordsPortal />} />
         <Route path="/elders/:id/medications" element={<MedicationDashboard />} />

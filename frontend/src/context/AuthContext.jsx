@@ -1,29 +1,51 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
+const readStoredUser = () => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const value = window.localStorage.getItem("user");
+    return value ? JSON.parse(value) : null;
+  } catch {
+    window.localStorage.removeItem("user");
+    return null;
+  }
+};
+
+const cleanToken = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/^Bearer\s+/i, "")
+    .replace(/^"(.*)"$/, "$1")
+    .trim();
+
+const readStoredToken = () => {
+  if (typeof window === "undefined") return null;
+
+  const cleaned = cleanToken(window.localStorage.getItem("token"));
+  if (!cleaned) {
+    window.localStorage.removeItem("token");
+    return null;
+  }
+  return cleaned;
+};
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // On first load, restore any saved session
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
-
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
-    }
-    setLoading(false);
-  }, []);
+  const [user, setUser] = useState(readStoredUser);
+  const [token, setToken] = useState(readStoredToken);
 
   const login = (userData, newToken) => {
+    const cleaned = cleanToken(newToken);
+    if (!userData || !cleaned) {
+      throw new Error("Login response did not contain a valid session.");
+    }
+
     localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", newToken);
+    localStorage.setItem("token", cleaned);
     setUser(userData);
-    setToken(newToken);
+    setToken(cleaned);
   };
 
   const logout = () => {
@@ -36,8 +58,8 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     token,
-    isAuthenticated: !!user,
-    loading,
+    isAuthenticated: Boolean(user && token),
+    loading: false,
     login,
     logout,
   };

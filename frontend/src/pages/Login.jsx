@@ -6,7 +6,7 @@ import { FiMail, FiLock } from "react-icons/fi";
 import AuthLayout from "../layouts/AuthLayout";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
-import { loginUser } from "../services/authService";
+import { loginUser, verifyAuthToken } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -39,6 +39,7 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await loginUser(form);
+      await verifyAuthToken(data.token);
       login(data.user, data.token);
       toast.success("Welcome back!");
       navigate(
